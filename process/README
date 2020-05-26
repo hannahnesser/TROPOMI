@@ -1,0 +1,28 @@
+This folder contains the scripts necessary to download
+the TROPOMI data, oversample it, and plot it on a world/
+regional basis. 
+
+The scripts should be run as follows:
+1. download.sh : Edit the input to download only the most
+   recent month of data
+2. create_oversampling_csv_run.sh : Change input directory
+   and minimum date (after that date, process the data)
+3. oversampling_run.sh : Edit the list of input files but
+   DO NOT RUN.
+4. oversampling_run_submit.sh : Run.
+5. region_subset and world_subset : Run.
+
+To do:
+0. Write oversampling_run.sh to automatically create list
+   of files
+1. Rewrite world_subset.sh and region_subset.sh to create
+   monthly oversampled plots each month
+2. Then create a script to download and process the most
+   recent month
+
+Edit record:
+2019/09/23: HON rearranged directory to separate run scripts
+            from python/fortran scripts. Did NOT test whether
+            everything still works.
+	    Renamed oversampling_fortran/ directory to fortran/
+	    and did NOT adjust any run scripts.
