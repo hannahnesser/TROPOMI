@@ -120,18 +120,18 @@ def read_GC(date):
     met['DRYAIR']=DRYAIR
 
     #--- read sensitivity ---
-	#commented out May 26, 2020 mwinter
-    #filename=Sensi_datadir+'/'+date+'0000.nc'
-    #print,'sensfile',filename
-    #data=xr.open_dataset(filename)
-    #Sensi=data['Sensi'].values
-    #Sensi=np.einsum('klji->ijlk',Sensi)
-    #data.close()
-    #for i in range(len(LON)):
-    #    for j in range(len(LAT)):
-    #        l=int(TROPP[i,j])
-    #        Sensi[i,j,l:,:]=Sensi[i,j,l:,:]*lat_ratio[j,month-1]
-    #met['Sensi']=Sensi
+
+    filename=Sensi_datadir+'/'+date+'0000.nc'
+    print,'sensfile',filename
+    data=xr.open_dataset(filename)
+    Sensi=data['Sensi'].values
+    Sensi=np.einsum('klji->ijlk',Sensi)
+    data.close()
+    for i in range(len(LON)):
+        for j in range(len(LAT)):
+            l=int(TROPP[i,j])
+            Sensi[i,j,l:,:]=Sensi[i,j,l:,:]*lat_ratio[j,month-1]
+    met['Sensi']=Sensi
 
     return met
 
