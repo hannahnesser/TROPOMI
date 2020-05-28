@@ -105,10 +105,11 @@ def read_GC(date):
     PEDGE=np.dstack((PEDGE,TOP))
 
     CH4_adjusted=CH4.copy()
-    for i in range(len(LON)):
-        for j in range(len(LAT)):
-            l=int(TROPP[i,j])
-            CH4_adjusted[i,j,l:]=CH4[i,j,l:]*lat_ratio[j,month-1]
+    # Latitudinal stratosphere correction?
+    # for i in range(len(LON)):
+    #     for j in range(len(LAT)):
+    #         l=int(TROPP[i,j])
+    #         CH4_adjusted[i,j,l:]=CH4[i,j,l:]*lat_ratio[j,month-1]
 
     met={}
     met['lon']=LON
@@ -126,10 +127,11 @@ def read_GC(date):
     Sensi=data['Sensi'].values
     Sensi=np.einsum('klji->ijlk',Sensi)
     data.close()
-    for i in range(len(LON)):
-        for j in range(len(LAT)):
-            l=int(TROPP[i,j])
-            Sensi[i,j,l:,:]=Sensi[i,j,l:,:]*lat_ratio[j,month-1]
+    # Latitudinal stratosphere correction
+    # for i in range(len(LON)):
+    #     for j in range(len(LAT)):
+    #         l=int(TROPP[i,j])
+    #         Sensi[i,j,l:,:]=Sensi[i,j,l:,:]*lat_ratio[j,month-1]
     met['Sensi']=Sensi
 
     return met
@@ -167,10 +169,11 @@ def read_pert(date,ipert):
     TOP=np.ones([len(LON),len(LAT)],dtype=float);TOP.fill(0.01)
 
     CH4_adjusted=CH4.copy()
-    for i in range(len(LON)):
-        for j in range(len(LAT)):
-            l=int(TROPP[i,j])
-            CH4_adjusted[i,j,l:]=CH4[i,j,l:]*lat_ratio[j,month-1]
+    # Latitudinal stratospheric correction?
+    # for i in range(len(LON)):
+    #     for j in range(len(LAT)):
+    #         l=int(TROPP[i,j])
+    #         CH4_adjusted[i,j,l:]=CH4[i,j,l:]*lat_ratio[j,month-1]
 
     met={}
     met['lon']=LON
@@ -311,10 +314,10 @@ outputdir="/net/seasasfs02/srv/export/seasasfs02/share_root/zhenqu/TROPOMI_proce
 biasdir="/net/seasasfs02/srv/export/seasasfs02/share_root/zhenqu/TROPOMI_processed/bias/"
 Sensi_datadir="/n/holyscratch01/jacob_lab/zhenqu/aggregate/data/"
 
-#==== read lat_ratio ===
-df=pd.read_csv("./lat_ratio.csv",index_col=0)
-lat_mid=df.index
-lat_ratio=df.values
+# #==== read lat_ratio ===
+# df=pd.read_csv("./lat_ratio.csv",index_col=0)
+# lat_mid=df.index
+# lat_ratio=df.values
 
 #==== read Satellite ===
 
