@@ -104,7 +104,7 @@ def read_GC(date):
     TOP=np.ones([len(LON),len(LAT)],dtype=float);TOP.fill(0.01)
     PEDGE=np.dstack((PEDGE,TOP))
 
-    CH4_adjusted=CH4.copy()
+    # CH4_adjusted=CH4.copy()
     # Latitudinal stratosphere correction?
     # for i in range(len(LON)):
     #     for j in range(len(LAT)):
@@ -116,23 +116,23 @@ def read_GC(date):
     met['lat']=LAT
     met['PEDGE']=PEDGE
     met['CH4']=CH4
-    met['CH4_adjusted']=CH4_adjusted
+    # met['CH4_adjusted']=CH4_adjusted
     met['TROPP']=TROPP
     met['DRYAIR']=DRYAIR
 
     #--- read sensitivity ---
-    filename=Sensi_datadir+'/'+date+'0000.nc'
-    print,'sensfile',filename
-    data=xr.open_dataset(filename)
-    Sensi=data['Sensi'].values
-    Sensi=np.einsum('klji->ijlk',Sensi)
-    data.close()
-    # Latitudinal stratosphere correction
-    # for i in range(len(LON)):
-    #     for j in range(len(LAT)):
-    #         l=int(TROPP[i,j])
-    #         Sensi[i,j,l:,:]=Sensi[i,j,l:,:]*lat_ratio[j,month-1]
-    met['Sensi']=Sensi
+    # filename=Sensi_datadir+'/'+date+'0000.nc'
+    # print,'sensfile',filename
+    # data=xr.open_dataset(filename)
+    # Sensi=data['Sensi'].values
+    # Sensi=np.einsum('klji->ijlk',Sensi)
+    # data.close()
+    # # Latitudinal stratosphere correction
+    # # for i in range(len(LON)):
+    # #     for j in range(len(LAT)):
+    # #         l=int(TROPP[i,j])
+    # #         Sensi[i,j,l:,:]=Sensi[i,j,l:,:]*lat_ratio[j,month-1]
+    # met['Sensi']=Sensi
 
     return met
 
@@ -386,7 +386,8 @@ for index in range(0,len(Sat_files)):
     #sat_ind=np.where((TROPOMI['qa_value']>=0.5) & (TROPOMI['utctime']>=GC_startdate) & (TROPOMI['utctime']<=GC_enddate))
     sat_ind=np.where((TROPOMI['qa_value']>=0.5))
 
-    # observation dimension
+    # observation dimension (number of good observations in that single
+    # observation file)
     NN=len(sat_ind[0])
 
     # state vector dimension (we will need to change this)
@@ -411,7 +412,8 @@ for index in range(0,len(Sat_files)):
     # Iterate through observation dimension
     for iNN in range(NN):
 
-        # Get indices of good satellite observations (i.e. qa > 0.5)
+        # Get indices of the particular good satellite observation
+        # in question (i.e. qa > 0.5)
         iSat=sat_ind[0][iNN] # row
         jSat=sat_ind[1][iNN] # col
 
@@ -423,6 +425,8 @@ for index in range(0,len(Sat_files)):
         all_strdate.append(strdate)
 
     # Remove duplicates
+    # This is now a list of the day/hour at which every observation
+    # in a single TROPOMI file occurs at
     all_strdate=list(set(all_strdate))
 
     # Then, read in the GC data for these dates. This works by
@@ -440,7 +444,7 @@ for index in range(0,len(Sat_files)):
     #quit()
     # pert = np.zeros([NN,1009],dtype=np.float)
 
-    # Iterate through observations
+    # Iterate through observations (individual pixels)
     for iNN in range(NN):
         # Get indices of good TROPOMI observations
         iSat=sat_ind[0][iNN]
@@ -464,14 +468,24 @@ for index in range(0,len(Sat_files)):
         strdate=utctime.strftime("%Y%m%d.%H")
 
         # Get the GC data associated with the data we found above
+        # (lon, lat, pedge, ch4, tropp (pbl depth?), dryair)
         GC=all_date_GC[strdate]
 
+        # Find the grid box indices corresponding to the good TROPOMI
+        # observations
+        # Individual TROPOMI obs: TROPOMI['lat/lon'][iSat, jSat] (scalar)
+        # Enitre GC grid: GC['lon'] (vector)
         iGC=np.abs(GC['lon']-TROPOMI['longitude'][iSat,jSat]).argmin()
         jGC=np.abs(GC['lat']-TROPOMI['latitude'][iSat,jSat]).argmin()
+
+        # Then find the pressure and dry air for the column associated
+        # with that grid box (i.e. i=iGC, j=jGC, lev=ALL)
         GC_p=GC['PEDGE'][iGC,jGC,:]
         dryair = GC['DRYAIR'][iGC,jGC,:]
-        GC_CH4=GC['CH4_adjusted'][iGC,jGC,:]
+        # GC_CH4=GC['CH4_adjusted'][iGC,jGC,:]
+
         # quzhen 2020/2/13
+        # I suspect that she is creating an interpolated pressure grid
         intmap = get_intmap(Sat_p, GC_p)
         temp = newmap(intmap, len(Sat_p), GC_p, Sat_p, GC_CH4, dryair)
         Sat_CH4 = temp['GC_CH4']
@@ -480,25 +494,44 @@ for index in range(0,len(Sat_files)):
         # quzhen 2020/2/5
         temp_gc = 0e0
         temp_gcpri = 0e0
+
+        # Applies the averaging kernel to the geos-chem observations
+        # This is the TROPOMI operator
+        # For reference: see GEOS-Chem GOSAT Obs module
+        # ! Apply GOSAT observation operator
+        # !
+        # !   Xch4_m = Xch4_a + SUM_j( h_j * a_j * (x_m - x_a) )
+        # !
+        # !   Xch4_m  - model XCH4
+        # !   Xch4_a  - apriori XCH4 = h^T * x_a
+        # !   h       - pressure weighting function
+        # !   a       - column averaging kernel
+        # !   x_m     - model CH4 [v/v]
+        # !   x_a     - apriori CH4 [v/v]
+        # !
+        # !   The pressure weighting function is defined in Connor et al. 2008
+        # !     and the OCO-2 ATBD
+        # !--------------------------------------------------------------
         for ll in range(12):
             temp_gc += GC_WEIGHT[ll]*(priori[ll]/dry_air_subcolumns[ll]*1e9+AK[ll]*(Sat_CH4[ll] - priori[ll]/dry_air_subcolumns[ll]*1e9))
             temp_gcpri += GC_WEIGHT[ll]*(priori[ll]/dry_air_subcolumns[ll]*1e9+(Sat_CH4[ll] - priori[ll]/dry_air_subcolumns[ll]*1e9))
 
+        # I suspect(though I don't know) that GC_base_posteri is the
+        # GC observations with averaging kernel applied
         GC_base_posteri = temp_gc
         GC_base_pri = temp_gcpri
 
-
-        Sensi=GC['Sensi'][iGC,jGC,:,:]
-        temp = newmap2(intmap, len(Sat_p), GC_p, Sat_p, Sensi, dryair)
-        Sens = temp['Sens']
+        # Sensi=GC['Sensi'][iGC,jGC,:,:]
+        # temp = newmap2(intmap, len(Sat_p), GC_p, Sat_p, Sensi, dryair)
+        # Sens = temp['Sens']
         #print(Sens.shape)
-        temp_gcsens = np.zeros(1009)
-        for ll in range(12):
-            temp_gcsens[:] += GC_WEIGHT[ll]*AK[ll]*Sens[ll,:]
+        # temp_gcsens = np.zeros(1009)
+        # for ll in range(12):
+        #     temp_gcsens[:] += GC_WEIGHT[ll]*AK[ll]*Sens[ll,:]
 
             # perturbation = temp_gcsens-temp_gc
             # pert[iGC,jGC,isens] += (temp_gcsens-temp_gc)/0.5 # for grid aggregate
-        pert[iNN,:] = temp_gcsens/0.5 # for observation individual
+        # pert[iNN,:] = temp_gcsens/0.5 # for observation individual
 
 
         #print('GC_pos', GC_base_posteri)
@@ -512,12 +545,15 @@ for index in range(0,len(Sat_files)):
         temp_obs_GC[iNN,5]=jGC
         temp_obs_GC[iNN,6]=TROPOMI['precision'][iSat,jSat]
 
+        # Total error (unclear why not abs) in each grid cell
         b[jGC, iGC] += GC_base_posteri - TROPOMI['methane'][iSat,jSat]
+
+        # Number of observations in each grid cell
         bcount[jGC, iGC] += 1
 
     result={}
     result['obs_GC']=temp_obs_GC
-    result['KK']=pert
+    # result['KK']=pert
 
     save_obj(result,outputdir+date+'_GCtoTROPOMI.pkl')
 #b[bcount>0] = b[bcount>0]/bcount[bcount>0]
