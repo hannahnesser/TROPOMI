@@ -81,30 +81,29 @@ def read_GC(date):
     month=int(date[4:6])
 
     #--- read base GC -----
-    filename=GC_datadir+'/nc_ts'+date +'0000.nc'
+    filename=GC_datadir+'/GEOSChem.LevelEdgeDiags.'+date +'_0000z.nc4'
     #print('GC file', filename)
     data=xr.open_dataset(filename)
-    LON=data['LON'].values
-    LAT=data['LAT'].values
-    CH4=data['IJ-AVG-S__CH4'].values
+    LON=data['lon'].values
+    LAT=data['lat'].values
+    CH4=data['SpeciesConc_CH4'].values
     CH4=np.einsum('lij->jil',CH4)
-    TROPP=data['PBLDEPTH__PBL-L'].values[0,:,:]
+    TROPP=data['Met_PBLH'].values[0,:,:]
     TROPP=np.einsum('ij->ji',TROPP)
     PEDGE=data['PEDGE-S__PSURF'].values
     PEDGE=np.einsum('lij->jil',PEDGE)
 
-    AIRDEN=data['TIME-SER__AIRDEN'].values
+    AIRDEN=data['Met_AIRDEN'].values
     AIRDEN=np.einsum('lij->jil',AIRDEN)
-    BXHGHT=data['BXHGHT-S__BXHEIGHT'].values
+    BXHGHT=data['Met_BXHEIGHT'].values
     BXHGHT=np.einsum('lij->jil',BXHGHT)
-
     DRYAIR = np.multiply(AIRDEN, BXHGHT) * 100
 
     data.close()
     TOP=np.ones([len(LON),len(LAT)],dtype=float);TOP.fill(0.01)
     PEDGE=np.dstack((PEDGE,TOP))
 
-    CH4_adjusted=CH4.copy()
+    #CH4_adjusted=CH4.copy()
     # Latitudinal stratosphere correction?
     # for i in range(len(LON)):
     #     for j in range(len(LAT)):
@@ -121,18 +120,18 @@ def read_GC(date):
     met['DRYAIR']=DRYAIR
 
     #--- read sensitivity ---
-    filename=Sensi_datadir+'/'+date+'0000.nc'
-    print,'sensfile',filename
-    data=xr.open_dataset(filename)
-    Sensi=data['Sensi'].values
-    Sensi=np.einsum('klji->ijlk',Sensi)
-    data.close()
+    #filename=Sensi_datadir+'/'+date+'0000.nc'
+    #print,'sensfile',filename
+    #data=xr.open_dataset(filename)
+    #Sensi=data['Sensi'].values
+    #Sensi=np.einsum('klji->ijlk',Sensi)
+    #data.close()
     # Latitudinal stratosphere correction
     # for i in range(len(LON)):
     #     for j in range(len(LAT)):
     #         l=int(TROPP[i,j])
     #         Sensi[i,j,l:,:]=Sensi[i,j,l:,:]*lat_ratio[j,month-1]
-    met['Sensi']=Sensi
+    #met['Sensi']=Sensi
 
     return met
 
@@ -309,10 +308,10 @@ def remap2(Sensi, data_type, Com_p, location, first_2):
 #===========================Define functions ==================================
 #==============================================================================
 Sat_datadir="/n/seasasfs02/hnesser/TROPOMI/downloads_201910"
-GC_datadir="/n/holyscratch01/jacob_lab/zhenqu/inv2019/PertA/Prior/nc/"
-outputdir="/net/seasasfs02/srv/export/seasasfs02/share_root/zhenqu/TROPOMI_processed/data/"
-biasdir="/net/seasasfs02/srv/export/seasasfs02/share_root/zhenqu/TROPOMI_processed/bias/"
-Sensi_datadir="/n/holyscratch01/jacob_lab/zhenqu/aggregate/data/"
+GC_datadir="/n/holyscratch01/jacob_lab/mwinter/Nested_NA/run_dirs/Hannah_NA_0000/OutputDir/"
+outputdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/data/"
+biasdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/bias/"
+#Sensi_datadir="/n/holyscratch01/jacob_lab/zhenqu/aggregate/data/"
 
 # #==== read lat_ratio ===
 # df=pd.read_csv("./lat_ratio.csv",index_col=0)
@@ -488,17 +487,17 @@ for index in range(0,len(Sat_files)):
         GC_base_pri = temp_gcpri
 
 
-        Sensi=GC['Sensi'][iGC,jGC,:,:]
-        temp = newmap2(intmap, len(Sat_p), GC_p, Sat_p, Sensi, dryair)
-        Sens = temp['Sens']
+        #Sensi=GC['Sensi'][iGC,jGC,:,:]
+        #temp = newmap2(intmap, len(Sat_p), GC_p, Sat_p, Sensi, dryair)
+        #Sens = temp['Sens']
         #print(Sens.shape)
-        temp_gcsens = np.zeros(1009)
-        for ll in range(12):
-            temp_gcsens[:] += GC_WEIGHT[ll]*AK[ll]*Sens[ll,:]
+        #temp_gcsens = np.zeros(1009)
+        #for ll in range(12):
+        #    temp_gcsens[:] += GC_WEIGHT[ll]*AK[ll]*Sens[ll,:]
 
             # perturbation = temp_gcsens-temp_gc
             # pert[iGC,jGC,isens] += (temp_gcsens-temp_gc)/0.5 # for grid aggregate
-        pert[iNN,:] = temp_gcsens/0.5 # for observation individual
+        #pert[iNN,:] = temp_gcsens/0.5 # for observation individual
 
 
         #print('GC_pos', GC_base_posteri)
