@@ -85,37 +85,36 @@ def read_GC(date):
     met_filename=GC_datadir+'/GEOSChem.StateMet.'+date[0:8] +'.0000z.nc4'
     #print('GC file', filename)
     met_data=xr.open_dataset(met_filename)
-    TROPP=met_data['Met_PBLH'].values[0,:,:]
-    TROPP=np.einsum('ij->ji',TROPP)
+    TROPP=met_data['Met_PBLH'].values[0,:,:121]
+    #TROPP=np.einsum('ij->ji',TROPP)
 
-    AIRDEN=met_data['Met_AIRDEN'].values[0,:,:]
-    AIRDEN=np.einsum('...lij->jil...',AIRDEN)
-    BXHGHT=met_data['Met_BXHEIGHT'].values[0,:,:]
-    BXHGHT=np.einsum('...lij->jil...',BXHGHT)
+    AIRDEN=met_data['Met_AIRDEN'].values[0,:,:,:121]
+    AIRDEN=np.einsum('lji->jil',AIRDEN)
+    BXHGHT=met_data['Met_BXHEIGHT'].values[0,:,:,:121]
+    BXHGHT=np.einsum('lji->jil',BXHGHT)
     DRYAIR = np.multiply(AIRDEN, BXHGHT) * 100
 
     met_data.close()
    
     pedge_filename=GC_datadir+'/GEOSChem.LevelEdgeDiags.'+date[0:8] +'.0000z.nc4'
     pedge_data=xr.open_dataset(pedge_filename) 
-    PEDGE=pedge_data['Met_PEDGE'].values[0,:,:]
-    PEDGE=np.einsum('...lij->jil...',PEDGE)
-    LON=pedge_data['lon'].values
-    LAT=pedge_data['lat'].values
+    PEDGE=pedge_data['Met_PEDGE'].values[0,:,:,:121]
+    PEDGE=np.einsum('lji->jil',PEDGE)
+    LON=pedge_data['lon'].values[:121]
+    LAT=pedge_data['lat'].values[:121]
 
     pedge_data.close()
 
     species_filename=GC_datadir+'/GEOSChem.SpeciesConc.'+date[0:8] +'.0000z.nc4'
     species_data=xr.open_dataset(species_filename) 
-    CH4=species_data['SpeciesConc_CH4'].values[0,:,:]
-    CH4=np.einsum('...lij->jil...',CH4)
+    CH4=species_data['SpeciesConc_CH4'].values[0,:,:,:121]
+    CH4=np.einsum('lji->jil',CH4)
 
     species_data.close()
 
     #what is this??
-    #TOP=np.ones([len(LON),len(LAT)],dtype=float);TOP.fill(0.01) 
-    
-    #PEDGE=np.dstack((PEDGE,TOP))
+    TOP=np.ones([len(LON),len(LAT)],dtype=float);TOP.fill(0.01) 
+    PEDGE=np.dstack((PEDGE,TOP))
     
     #CH4_adjusted=CH4.copy()
     # Latitudinal stratosphere correction?
@@ -214,6 +213,7 @@ def read_allpert_GC(all_strdate):
 
 
 
+
 # quzhen 2020/2/13
 def get_intmap(Sat_p, GC_p):
 
@@ -259,7 +259,7 @@ def newmap(intmap,lgos, GC_p, Sat_p,gc_ch4_native,dryair):
     for ll in range(lgos-1):
       temp_gc = 0e0
       temp_dry = 0e0
-      for l in range(len(GC_p)-1):
+      for l in range(len(GC_p)-2): #changed from len()-1 to len()-2 mrew
         temp_gc += abs(intmap[l,ll]) * gc_ch4_native[l] * dryair[l]
         temp_dry += abs(intmap[l,ll]) * dryair[l]
         count += abs(intmap[l,ll]) * dryair[l]
@@ -323,7 +323,7 @@ def remap2(Sensi, data_type, Com_p, location, first_2):
 #==============================================================================
 Sat_datadir="/n/seasasfs02/hnesser/TROPOMI/downloads_201910/"
 GC_datadir="/n/holyscratch01/jacob_lab/mwinter/Nested_NA/run_dirs/Hannah_NA_0000/OutputDir/"
-outputdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/data/"
+outputdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/test/"
 biasdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/bias/"
 #Sensi_datadir="/n/holyscratch01/jacob_lab/zhenqu/aggregate/data/"
 
@@ -526,7 +526,6 @@ for index in range(0,len(Sat_files)):
         temp_obs_GC[iNN,5]=jGC
         temp_obs_GC[iNN,6]=TROPOMI['precision'][iSat,jSat]
 
-        #what is this b?
         #b[jGC, iGC] += GC_base_posteri - TROPOMI['methane'][iSat,jSat]
         #bcount[jGC, iGC] += 1
 
