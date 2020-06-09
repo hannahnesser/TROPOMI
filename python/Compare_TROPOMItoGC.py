@@ -81,34 +81,38 @@ def read_GC(date):
     month=int(date[4:6])
 
     #--- read base GC -----
+##
+#These L,I,J dims have I and J flipped for lon&lat to lat&lon.
+#However, if I correct this, then TOP isn't able to concatenate corectly b/c it has the wrong dimensions
+##
     #making date only consider month and day, not time
     met_filename=GC_datadir+'/GEOSChem.StateMet.'+date[0:8] +'.0000z.nc4'
     #print('GC file', filename)
     met_data=xr.open_dataset(met_filename)
-    TROPP=met_data['Met_PBLH'].values[0,:,:121]
-    #TROPP=np.einsum('ij->ji',TROPP)
+    TROPP=met_data['Met_PBLH'].values[0,:,:]
+    TROPP=np.einsum('ij->ji',TROPP)
 
-    AIRDEN=met_data['Met_AIRDEN'].values[0,:,:,:121]
-    AIRDEN=np.einsum('lji->jil',AIRDEN)
-    BXHGHT=met_data['Met_BXHEIGHT'].values[0,:,:,:121]
-    BXHGHT=np.einsum('lji->jil',BXHGHT)
+    AIRDEN=met_data['Met_AIRDEN'].values[0,:,:,:]
+    AIRDEN=np.einsum('lij->jil',AIRDEN)
+    BXHGHT=met_data['Met_BXHEIGHT'].values[0,:,:,:]
+    BXHGHT=np.einsum('lij->jil',BXHGHT)
     DRYAIR = np.multiply(AIRDEN, BXHGHT) * 100
 
     met_data.close()
    
     pedge_filename=GC_datadir+'/GEOSChem.LevelEdgeDiags.'+date[0:8] +'.0000z.nc4'
     pedge_data=xr.open_dataset(pedge_filename) 
-    PEDGE=pedge_data['Met_PEDGE'].values[0,:,:,:121]
-    PEDGE=np.einsum('lji->jil',PEDGE)
-    LON=pedge_data['lon'].values[:121]
-    LAT=pedge_data['lat'].values[:121]
+    PEDGE=pedge_data['Met_PEDGE'].values[0,:,:,:]
+    PEDGE=np.einsum('lij->jil',PEDGE)
+    LON=pedge_data['lon'].values
+    LAT=pedge_data['lat'].values
 
     pedge_data.close()
 
     species_filename=GC_datadir+'/GEOSChem.SpeciesConc.'+date[0:8] +'.0000z.nc4'
     species_data=xr.open_dataset(species_filename) 
-    CH4=species_data['SpeciesConc_CH4'].values[0,:,:,:121]
-    CH4=np.einsum('lji->jil',CH4)
+    CH4=species_data['SpeciesConc_CH4'].values[0,:,:,:]*1e9 #mrew
+    CH4=np.einsum('lij->jil',CH4)
 
     species_data.close()
 
@@ -321,9 +325,10 @@ def remap2(Sensi, data_type, Com_p, location, first_2):
 #==============================================================================
 #===========================Define functions ==================================
 #==============================================================================
-Sat_datadir="/n/seasasfs02/hnesser/TROPOMI/downloads_201910/"
+#Sat_datadir="/n/seasasfs02/hnesser/TROPOMI/downloads_201910/"
+Sat_datadir="/n/holyscratch01/jacob_lab/mwinter/newTROPOMI/"
 GC_datadir="/n/holyscratch01/jacob_lab/mwinter/Nested_NA/run_dirs/Hannah_NA_0000/OutputDir/"
-outputdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/test/"
+outputdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/data/"
 biasdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/bias/"
 #Sensi_datadir="/n/holyscratch01/jacob_lab/zhenqu/aggregate/data/"
 
