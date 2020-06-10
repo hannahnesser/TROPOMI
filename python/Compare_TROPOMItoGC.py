@@ -29,6 +29,9 @@ def read_tropomi(filename):
     met['precision']=data['methane_mixing_ratio_precision'].values[0,:,:]
     referencetime=data['time'].values
     delta_time=data['delta_time'][0].values
+    detailed_results=support = xr.open_dataset(filename, group="PRODUCT/SUPPORT_DATA/DETAILED_RESULTS")
+    met['albedo']=detailed_results['surface_albedo_SWIR'].values[0,:,:]
+    met['aerosol_optical_depth']=detailed_results['aerosol_optical_thickness_SWIR'].values[0,:,:]
     strdate=[]
     if delta_time.dtype=='<m8[ns]':
         strdate=referencetime+delta_time
@@ -530,6 +533,8 @@ for index in range(0,len(Sat_files)):
         temp_obs_GC[iNN,4]=iGC
         temp_obs_GC[iNN,5]=jGC
         temp_obs_GC[iNN,6]=TROPOMI['precision'][iSat,jSat]
+        temp_obs_GC[iNN,7]=TROPOMI['albedo'][iSat,jSat]
+        temp_obs_GC[iNN,8]=TROPOMI['aerosol_optical_depth'][iSat,jSat]
 
         #b[jGC, iGC] += GC_base_posteri - TROPOMI['methane'][iSat,jSat]
         #bcount[jGC, iGC] += 1
