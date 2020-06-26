@@ -8,6 +8,8 @@ import pickle
 import os
 import pandas as pd
 import datetime
+import scipy.integrate as integrate
+from scipy.integrate import quad
 
 #----- define function -------
 def save_obj(obj, name):
@@ -100,6 +102,8 @@ def read_GC(date):
     BXHGHT=met_data['Met_BXHEIGHT'].values[0,:,:,:]
     BXHGHT=np.einsum('lij->jil',BXHGHT)
     DRYAIR = np.multiply(AIRDEN, BXHGHT) * 100
+    ALBD=met_data['Met_ALBD'].values[0,:,:]
+    ALBD=np.einsum('ij->ji',ALBD)
 
     met_data.close()
    
@@ -117,6 +121,7 @@ def read_GC(date):
     species_data=xr.open_dataset(species_filename) 
     CH4=species_data['SpeciesConc_CH4'].values[0,:,:,:]*1e9 #mrew
     CH4=np.einsum('lij->jil',CH4)
+    LEV=species_data.lev.values[:] 
 
     species_data.close()
 
@@ -137,11 +142,13 @@ def read_GC(date):
     met['lat']=LAT
     met['PEDGE']=PEDGE
     met['CH4']=CH4
+    met['LEV']=LEV
 
     #met['CH4_adjusted']=CH4_adjusted
 
     met['TROPP']=TROPP
     met['DRYAIR']=DRYAIR
+    met['ALBD']=ALBD
 
     #--- read sensitivity ---
 
@@ -337,8 +344,8 @@ def remap2(Sensi, data_type, Com_p, location, first_2):
 #==============================================================================
 #Sat_datadir="/n/seasasfs02/hnesser/TROPOMI/downloads_201910/"
 Sat_datadir="/n/holyscratch01/jacob_lab/mwinter/newTROPOMI/"
-GC_datadir="/n/holyscratch01/jacob_lab/mwinter/Nested_NA/run_dirs/Hannah_NA_0000/OutputDir/"
-outputdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/data/"
+GC_datadir="/n/holyscratch01/jacob_lab/mwinter/Nested_NA/run_dirs/Hannah_NA_0000/OutputDir_2018/"
+outputdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/data_2018_ch4col/"
 biasdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/bias/"
 #Sensi_datadir="/n/holyscratch01/jacob_lab/zhenqu/aggregate/data/"
 
@@ -368,6 +375,7 @@ for index in range(len(allfiles)):
     DD=int(strdate[6:8])
 
     # Skip observations not in range
+   # number = [i for i in range(2,9)]
     if not ((YYYY==2018 and MM==5)):
         continue
 
@@ -428,7 +436,7 @@ for index in range(0,len(Sat_files)):
 
     # create an empty matrix to store TROPOMI CH4, GC CH4,
     # lon, lat, II, and JJ (GC indices)
-    temp_obs_GC=np.zeros([NN,7],dtype=np.float32)#TROPOMI-CH4, GC-CH4, longitude,latitude, II, JJ
+    temp_obs_GC=np.zeros([NN,11],dtype=np.float32)#TROPOMI-CH4, GC-CH4, longitude,latitude, II, JJ
 
     #================================
     #--- now compute sensitivity ---
@@ -513,9 +521,12 @@ for index in range(0,len(Sat_files)):
         GC_p=GC['PEDGE'][iGC,jGC,:]
         dryair = GC['DRYAIR'][iGC,jGC,:]
 
+	#mrew
+        GC_albd=GC['ALBD'][iGC,jGC]
+
         #GC_CH4=GC['CH4_adjusted'][iGC,jGC,:]
         GC_CH4=GC['CH4'][iGC,jGC,:]
-    
+        GC_CH4_col=integrate.simps(GC['CH4'][iGC,jGC,:]*((GC['LEV']*10**6*6.023*10**23)/(8.31)), x=None, dx=1)/integrate.simps((GC['LEV']*10**6*6.023*10**23)/(8.31), x=None, dx=1)
 
         # quzhen 2020/2/13
         # I suspect that she is creating an interpolated pressure grid
@@ -582,13 +593,15 @@ for index in range(0,len(Sat_files)):
         temp_obs_GC[iNN,6]=TROPOMI['precision'][iSat,jSat]
         temp_obs_GC[iNN,7]=TROPOMI['albedo'][iSat,jSat]
         temp_obs_GC[iNN,8]=TROPOMI['aerosol_optical_depth'][iSat,jSat]
-
-
+	#mrew - not sure
+        temp_obs_GC[iNN,9]=GC_albd
+        temp_obs_GC[iNN,10]=GC_CH4_col
+	
         # Total error (unclear why not abs) in each grid cell
-        b[jGC, iGC] += GC_base_posteri - TROPOMI['methane'][iSat,jSat]
+        #b[jGC, iGC] += GC_base_posteri - TROPOMI['methane'][iSat,jSat]
 
         # Number of observations in each grid cell
-        bcount[jGC, iGC] += 1
+        #bcount[jGC, iGC] += 1
 
     result={}
     result['obs_GC']=temp_obs_GC
@@ -598,4 +611,4 @@ for index in range(0,len(Sat_files)):
     save_obj(result,outputdir+date+'_GCtoTROPOMI.pkl')
 #b[bcount>0] = b[bcount>0]/bcount[bcount>0]
 #save_obj(b,biasdir+'1.pkl')
-
+print('CODE FINISHED')
