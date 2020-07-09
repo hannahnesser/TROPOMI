@@ -24,16 +24,23 @@ def read_tropomi(filename):
     met={}
     #--- read methane, qa_value, longitude, latitude ---
     data=xr.open_dataset(filename,group="PRODUCT")
+
+    # Methane concentration (ppb)
     met['methane']=data['methane_mixing_ratio_bias_corrected'].values[0,:,:]
+
+    # qa value
     met['qa_value']=data['qa_value'].values[0,:,:]
+
+    # Lat and lon
     met['longitude']=data['longitude'].values[0,:,:]
     met['latitude']=data['latitude'].values[0,:,:]
+
+    # Precision (ppb)
     met['precision']=data['methane_mixing_ratio_precision'].values[0,:,:]
+
+    # Times
     referencetime=data['time'].values
     delta_time=data['delta_time'][0].values
-    detailed_results=support = xr.open_dataset(filename, group="PRODUCT/SUPPORT_DATA/DETAILED_RESULTS")
-    met['albedo']=detailed_results['surface_albedo_SWIR'].values[0,:,:]
-    met['aerosol_optical_depth']=detailed_results['aerosol_optical_thickness_SWIR'].values[0,:,:]
     strdate=[]
     if delta_time.dtype=='<m8[ns]':
         strdate=referencetime+delta_time
@@ -52,83 +59,128 @@ def read_tropomi(filename):
     data.close()
     met['localtime']=localtimes
 
-    data=xr.open_dataset(filename,group="PRODUCT/SUPPORT_DATA/DETAILED_RESULTS")
+    # Albedo, AOD, TROPOMI averaging kernel
+    data=support = xr.open_dataset(filename, group="PRODUCT/SUPPORT_DATA/DETAILED_RESULTS")
+    met['albedo']=data['surface_albedo_SWIR'].values[0,:,:]
+    met['aerosol_optical_depth']=data['aerosol_optical_thickness_SWIR'].values[0,:,:]
     met['column_AK']=data['column_averaging_kernel'].values[0,:,:,::-1]
     data.close()
 
     data=xr.open_dataset(filename,group="PRODUCT/SUPPORT_DATA/INPUT_DATA")
-    met['methane_profile_apriori']=data['methane_profile_apriori'].values[0,:,:,::-1]#mol m-2
-    pressure_interval=data['pressure_interval'].values[0,:,:]/100#Pa->hPa
-    surface_pressure=data['surface_pressure'].values[0,:,:]/100
-    met['dry_air_subcolumns']=data['dry_air_subcolumns'].values[0,:,:,::-1]#Pa -> hPa
+
+    # Methane a priori profile (mol m-2)
+    met['methane_profile_apriori']=data['methane_profile_apriori'].values[0,:,:,::-1]
+
+    # Pressure information (Pa)
+    pressure_interval=data['pressure_interval'].values[0,:,:]
+    surface_pressure=data['surface_pressure'].values[0,:,:]
+
+    # Dry air subcolumns (mol m-2)
+    met['dry_air_subcolumns']=data['dry_air_subcolumns'].values[0,:,:,::-1]
     data.close()
 
+    # Get data shape
     N1=met['methane'].shape[0]
     N2=met['methane'].shape[1]
 
+    # Create a pressures array corresponding to 13 vertical levels?
     pressures=np.zeros([N1,N2,13], dtype=np.float)
     pressures.fill(np.nan)
-    for i in range(12+1):
-        pressures[:,:,i]=surface_pressure-i*pressure_interval
-    met['pressures']=pressures
-
-    # quzhen 2020/2/5
     pressures_mid=np.zeros([N1,N2,12], dtype=np.float)
     pressures_mid.fill(np.nan)
-    for i in range(12):
-        pressures_mid[:,:,i]=surface_pressure-(i+0.5)*pressure_interval
+    # for i in range(12+1):
+    #     pressures[:,:,i]=surface_pressure-i*pressure_interval
+    #     pressures_mid[:,:,i]=surface_pressure-(i+0.5)*pressure_interval
+    # HN 2020/07/07 : converted from for loop to numpy
+
+
+    met['pressures']=pressures
     met['pressures_mid']=pressures_mid
 
     return met
 
+def get_diagnostic(diag_name, date):
+    return os.path.join(GC_datadir,
+                        'GEOSChem.' + diag_name + '.' + date + '.0000z.nc4')
 
 def read_GC(date):
     month=int(date[4:6])
+    short_date = date[:8]
+    hour = int(date[-2:])
 
     #--- read base GC -----
 ##
 #These L,I,J dims have I and J flipped for lon&lat to lat&lon.
 #However, if I correct this, then TOP isn't able to concatenate corectly b/c it has the wrong dimensions
 ##
-    #making date only consider month and day, not time
-    met_filename=GC_datadir+'/GEOSChem.StateMet.'+date[0:8] +'.0000z.nc4'
-    #print('GC file', filename)
-    met_data=xr.open_dataset(met_filename)
-    TROPP=met_data['Met_PBLH'].values[0,:,:]
-    TROPP=np.einsum('ij->ji',TROPP)
 
-    AIRDEN=met_data['Met_AIRDEN'].values[0,:,:,:]
-    AIRDEN=np.einsum('lij->jil',AIRDEN)
-    BXHGHT=met_data['Met_BXHEIGHT'].values[0,:,:,:]
-    BXHGHT=np.einsum('lij->jil',BXHGHT)
-    DRYAIR = np.multiply(AIRDEN, BXHGHT) * 100
-    ALBD=met_data['Met_ALBD'].values[0,:,:]
-    ALBD=np.einsum('ij->ji',ALBD)
-
-    met_data.close()
-   
-    pedge_filename=GC_datadir+'/GEOSChem.LevelEdgeDiags.'+date[0:8] +'.0000z.nc4'
-    pedge_data=xr.open_dataset(pedge_filename) 
-    PEDGE=pedge_data['Met_PEDGE'].values[0,:,:,:]
-    PEDGE=np.einsum('lij->jil',PEDGE)
-    LON=pedge_data['lon'].values
-    LAT=pedge_data['lat'].values
-
-
-    pedge_data.close()
-
-    species_filename=GC_datadir+'/GEOSChem.SpeciesConc.'+date[0:8] +'.0000z.nc4'
-    species_data=xr.open_dataset(species_filename) 
-    CH4=species_data['SpeciesConc_CH4'].values[0,:,:,:]*1e9 #mrew
+    # Start by downloading methane data (ppb), latitude, and longitude
+    species_filename=get_diagnostic('SpeciesConc', short_date)
+    # species_filename=GC_datadir+'/GEOSChem.SpeciesConc.'+date[0:8] +'.0000z.nc4'
+    species_data=xr.open_dataset(species_filename)
+    #subset for the relevant hours
+    species_data=species_data.where(species_data.time.dt.hour == hour,
+                                    drop=True).squeeze()
+    CH4=species_data['SpeciesConc_CH4'].values*1e9#[0,:,:,:]*1e9 #mrew
     CH4=np.einsum('lij->jil',CH4)
-    LEV=species_data.lev.values[:] 
+    LON=species_data['lon'].values
+    LAT=species_data['lat'].values
+    LEV=species_data.lev.values[:]
 
     species_data.close()
 
+    # Now get the other varaibles
+    #making date only consider month and day, not time
+    met_filename=get_diagnostic('StateMet', date[:8])
+    # met_filename=GC_datadir+'/GEOSChem.StateMet.'+date[0:8] +'.0000z.nc4'
+    #print('GC file', filename)
+    met_data=xr.open_dataset(met_filename)
+    met_data=met_data.where(met_data.time.dt.hour == hour,
+                            drop=True).squeeze()
+
+    # PBL height (m)
+    TROPP=met_data['Met_PBLH'].values#[0,:,:]
+    TROPP=np.einsum('ij->ji',TROPP)
+
+    # Air density (kg m-3)
+    AIRDEN=met_data['Met_AIRDEN'].values#[0,:,:,:]
+    AIRDEN=np.einsum('lij->jil',AIRDEN)
+
+    # Box height wrt dry air (m)
+    BXHGHT=met_data['Met_BXHEIGHT'].values#[0,:,:,:]
+    BXHGHT=np.einsum('lij->jil',BXHGHT)
+
+    # Dry air column (kg m-2)
+    DRYAIR = np.multiply(AIRDEN, BXHGHT) #* 100
+
+    # Albedo
+    ALBD=met_data['Met_ALBD'].values#[0,:,:]
+    ALBD=np.einsum('ij->ji',ALBD)
+
+    # Dry air mass
+    DRYAIRMASS = met_data['Met_AD'].values
+    DRYAIRMASS = np.einsum('lij->jil', DRYAIRMASS)
+
+    # Total column
+    TOTCOL=(CH4*DRYAIRMASS).sum(axis=2)/DRYAIRMASS.sum(axis=2)
+
+    met_data.close()
+
+    # Pressure information (hPa)
+    # pedge_filename=GC_datadir+'/GEOSChem.LevelEdgeDiags.'+date[0:8] +'.0000z.nc4'
+    pedge_filename=get_diagnostic('LevelEdgeDiags', date[:8])
+    pedge_data=xr.open_dataset(pedge_filename)
+    PEDGE=pedge_data['Met_PEDGE'].values#[0,:,:,:]*100
+    PEDGE=np.einsum('lij->jil',PEDGE)
+    # LON=pedge_data['lon'].values
+    # LAT=pedge_data['lat'].values
+
+    pedge_data.close()
+
     #what is this
-    TOP=np.ones([len(LON),len(LAT)],dtype=float);TOP.fill(0.01) 
+    TOP=np.ones([len(LON),len(LAT)],dtype=float)*0.01
     PEDGE=np.dstack((PEDGE,TOP))
-    
+
     #CH4_adjusted=CH4.copy()
 
     # Latitudinal stratosphere correction?
@@ -149,6 +201,7 @@ def read_GC(date):
     met['TROPP']=TROPP
     met['DRYAIR']=DRYAIR
     met['ALBD']=ALBD
+    met['GCCOL']=TOTCOL
 
     #--- read sensitivity ---
 
@@ -165,75 +218,74 @@ def read_GC(date):
     #         Sensi[i,j,l:,:]=Sensi[i,j,l:,:]*lat_ratio[j,month-1]
     #met['Sensi']=Sensi
 
-
-
     return met
 
-def read_pert(date,ipert):
-    month=int(date[4:6])
+# def read_pert(date,ipert):
+#     month=int(date[4:6])
 
-    #--- read base GC -----
-    pertdir = '/n/holyscratch01/jacob_lab/zhenqu/inv2019/PertA/'
+#     #--- read base GC -----
+#     pertdir = '/n/holyscratch01/jacob_lab/zhenqu/inv2019/PertA/'
 
-    filename=pertdir+'PertA_'+str(ipert).zfill(4)+ '/nc/nc_ts'+date +'0000.nc'
-    #print('pert file', filename)
-    data=xr.open_dataset(filename)
-    LON=data['LON'].values
-    LAT=data['LAT'].values
-    CH4=data['IJ-AVG-S__CH4'].values
-    CH4=np.einsum('lij->jil',CH4)
+#     filename=pertdir+'PertA_'+str(ipert).zfill(4)+ '/nc/nc_ts'+date +'0000.nc'
+#     #print('pert file', filename)
+#     data=xr.open_dataset(filename)
+#     LON=data['LON'].values
+#     LAT=data['LAT'].values
+#     CH4=data['IJ-AVG-S__CH4'].values
+#     CH4=np.einsum('lij->jil',CH4)
 
-    AIRDEN=data['TIME-SER__AIRDEN'].values
-    AIRDEN=np.einsum('lij->jil',AIRDEN)
-    BXHGHT=data['BXHGHT-S__BXHEIGHT'].values
-    BXHGHT=np.einsum('lij->jil',BXHGHT)
+#     AIRDEN=data['TIME-SER__AIRDEN'].values
+#     AIRDEN=np.einsum('lij->jil',AIRDEN)
+#     BXHGHT=data['BXHGHT-S__BXHEIGHT'].values
+#     BXHGHT=np.einsum('lij->jil',BXHGHT)
 
-    DRYAIR = np.multiply(AIRDEN, BXHGHT) * 100
+#     DRYAIR = np.multiply(AIRDEN, BXHGHT) * 100
 
-    data.close()
+#     data.close()
 
-    filename=GC_datadir+'/nc_ts'+date +'0000.nc'
-    #print('GC file', filename)
-    data=xr.open_dataset(filename)
-    TROPP=data['PBLDEPTH__PBL-L'].values[0,:,:]
-    TROPP=np.einsum('ij->ji',TROPP)
-    data.close()
+#     filename=GC_datadir+'/nc_ts'+date +'0000.nc'
+#     #print('GC file', filename)
+#     data=xr.open_dataset(filename)
+#     TROPP=data['PBLDEPTH__PBL-L'].values[0,:,:]
+#     TROPP=np.einsum('ij->ji',TROPP)
+#     data.close()
 
-    TOP=np.ones([len(LON),len(LAT)],dtype=float);TOP.fill(0.01)
+#     TOP=np.ones([len(LON),len(LAT)],dtype=float);TOP.fill(0.01)
 
-    CH4_adjusted=CH4.copy()
-    # Latitudinal stratospheric correction?
-    # for i in range(len(LON)):
-    #     for j in range(len(LAT)):
-    #         l=int(TROPP[i,j])
-    #         CH4_adjusted[i,j,l:]=CH4[i,j,l:]*lat_ratio[j,month-1]
+#     CH4_adjusted=CH4.copy()
+#     # Latitudinal stratospheric correction?
+#     # for i in range(len(LON)):
+#     #     for j in range(len(LAT)):
+#     #         l=int(TROPP[i,j])
+#     #         CH4_adjusted[i,j,l:]=CH4[i,j,l:]*lat_ratio[j,month-1]
 
-    met={}
-    met['lon']=LON
-    met['lat']=LAT
-    met['CH4']=CH4
-    met['CH4_adjusted']=CH4_adjusted
-    met['DRYAIR']=DRYAIR
+#     met={}
+#     met['lon']=LON
+#     met['lat']=LAT
+#     met['CH4']=CH4
+#     met['CH4_adjusted']=CH4_adjusted
+#     met['DRYAIR']=DRYAIR
 
-    return met
+#     return met
 
 
 def read_all_GC(all_strdate):
     met={}
+
+    # reduce all_strdate to daily list (no time, nt)
+    # all_strdate_nt = [d[:8] for d in all_strdate]
+    # all_strdate_nt = list(set(all_strdate_nt))
     for strdate in all_strdate:
         met[strdate]= read_GC(strdate)
     return met
 
-def read_allpert_GC(all_strdate):
-    met={}
-    for strdate in all_strdate:
-        for ipert in range(1009):
-        #for ipert in range(99):
-            met[(strdate,ipert)]= read_pert(strdate,ipert+1)
-    return met
-
-
-
+# def read_allpert_GC(all_strdate):
+#     met={}
+#     for strdate in all_strdate:
+#         for ipert in range(1009):
+#         #for ipert in range(99):
+#             met[(strdate,ipert)]= read_pert(strdate,ipert+1)
+#     return met
 
 # quzhen 2020/2/13
 def get_intmap(Sat_p, GC_p):
@@ -310,9 +362,6 @@ def newmap2(intmap,lgos, GC_p, Sat_p,gc_sens,dryair):
     met['Sens']=gc_ch4
 
     return met
-
-
-
 
 def remap2(Sensi, data_type, Com_p, location, first_2):
     MM=Sensi.shape[1]
@@ -393,7 +442,7 @@ bcount = np.zeros((46,72))
 # Iterate throught the Sat_files we created
 #for index in range((1-1)*400,1*400):
 #for index in range(0,1):
-for index in range(0,len(Sat_files)):
+for index in range(1):#range(0,len(Sat_files)):
     print('========================')
 
     # Again, get the date of the sat file in question
@@ -406,8 +455,8 @@ for index in range(0,len(Sat_files)):
 
     # If already processed, skip the rest of the processing
     # within this loop
-    if os.path.isfile(outputdir+date+'_GCtoTROPOMI.pkl'):
-        continue
+    # if os.path.isfile(outputdir+date+'_GCtoTROPOMI.pkl'):
+    #     continue
 
     #--- read TROPOMI ---
     # This function creates a dictionary that saves out the
@@ -422,10 +471,8 @@ for index in range(0,len(Sat_files)):
     #sat_ind=np.where((TROPOMI['qa_value']>=0.5) & (TROPOMI['utctime']>=GC_startdate) & (TROPOMI['utctime']<=GC_enddate))
     sat_ind=np.where((TROPOMI['qa_value']>=0.5))
 
-
     # observation dimension (number of good observations in that single
     # observation file)
-
     NN=len(sat_ind[0])
 
     # state vector dimension (we will need to change this)
@@ -436,7 +483,7 @@ for index in range(0,len(Sat_files)):
 
     # create an empty matrix to store TROPOMI CH4, GC CH4,
     # lon, lat, II, and JJ (GC indices)
-    temp_obs_GC=np.zeros([NN,11],dtype=np.float32)#TROPOMI-CH4, GC-CH4, longitude,latitude, II, JJ
+    temp_obs_GC=np.zeros([NN,10],dtype=np.float32)#TROPOMI-CH4, GC-CH4, longitude,latitude, II, JJ
 
     #================================
     #--- now compute sensitivity ---
@@ -472,7 +519,6 @@ for index in range(0,len(Sat_files)):
     # (which I believe is the stratospheric corrected data), TROPP
     # (which is the planetary boundary layer info), and dry air.
     # It also reads sensitivity data
-    ##### THIS IS WHERE I STOPPED COMMENTING ######
     all_date_GC=read_all_GC(all_strdate)
     #all_pert_GC=read_allpert_GC(all_strdate)
 
@@ -507,7 +553,7 @@ for index in range(0,len(Sat_files)):
 
         # Get the GC data associated with the data we found above
         # (lon, lat, pedge, ch4, tropp (pbl depth?), dryair)
-        GC=all_date_GC[strdate]
+        GC=all_date_GC[strdate[:8]]
 
         # Find the grid box indices corresponding to the good TROPOMI
         # observations
@@ -516,7 +562,7 @@ for index in range(0,len(Sat_files)):
         iGC=np.abs(GC['lon']-TROPOMI['longitude'][iSat,jSat]).argmin()
         jGC=np.abs(GC['lat']-TROPOMI['latitude'][iSat,jSat]).argmin()
 
-        # Then find the pressure and dry air for the column associated
+        # Then find the pressure and dry air (kg/m2?) for the column associated
         # with that grid box (i.e. i=iGC, j=jGC, lev=ALL)
         GC_p=GC['PEDGE'][iGC,jGC,:]
         dryair = GC['DRYAIR'][iGC,jGC,:]
@@ -524,9 +570,12 @@ for index in range(0,len(Sat_files)):
 	#mrew
         GC_albd=GC['ALBD'][iGC,jGC]
 
+        # Column calculation
         #GC_CH4=GC['CH4_adjusted'][iGC,jGC,:]
-        GC_CH4=GC['CH4'][iGC,jGC,:]
-        GC_CH4_col=integrate.simps(GC['CH4'][iGC,jGC,:]*((GC['LEV']*10**6*6.023*10**23)/(8.31)), x=None, dx=1)/integrate.simps((GC['LEV']*10**6*6.023*10**23)/(8.31), x=None, dx=1)
+        # GC_CH4=GC['CH4'][iGC,jGC,:]
+        # GC_CH4_col=integrate.simps(GC['CH4'][iGC,jGC,:]*((GC['LEV']*10**6*6.023*10**23)/(8.31)), x=None, dx=1)/integrate.simps((GC['LEV']*10**6*6.023*10**23)/(8.31), x=None, dx=1)
+        GC_CH4 = GC['CH4'][iGC, jGC, :]
+        GC_COL = GC['GCCOL'][iGC, jGC]
 
         # quzhen 2020/2/13
         # I suspect that she is creating an interpolated pressure grid
@@ -565,8 +614,6 @@ for index in range(0,len(Sat_files)):
         GC_base_posteri = temp_gc
         GC_base_pri = temp_gcpri
 
-
-
         #Sensi=GC['Sensi'][iGC,jGC,:,:]
         #temp = newmap2(intmap, len(Sat_p), GC_p, Sat_p, Sensi, dryair)
         #Sens = temp['Sens']
@@ -594,9 +641,9 @@ for index in range(0,len(Sat_files)):
         temp_obs_GC[iNN,7]=TROPOMI['albedo'][iSat,jSat]
         temp_obs_GC[iNN,8]=TROPOMI['aerosol_optical_depth'][iSat,jSat]
 	#mrew - not sure
-        temp_obs_GC[iNN,9]=GC_albd
-        temp_obs_GC[iNN,10]=GC_CH4_col
-	
+        # temp_obs_GC[iNN,9]=GC_albd
+        temp_obs_GC[iNN,9]=GC_COL
+
         # Total error (unclear why not abs) in each grid cell
         #b[jGC, iGC] += GC_base_posteri - TROPOMI['methane'][iSat,jSat]
 
