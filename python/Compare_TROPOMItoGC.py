@@ -131,7 +131,7 @@ def read_GC(date):
 
     # Now get the other varaibles
     #making date only consider month and day, not time
-    met_filename=get_diagnostic('StateMet', date[:8])
+    met_filename=get_diagnostic('StateMet', short_date)
     # met_filename=GC_datadir+'/GEOSChem.StateMet.'+date[0:8] +'.0000z.nc4'
     #print('GC file', filename)
     met_data=xr.open_dataset(met_filename)
@@ -162,14 +162,17 @@ def read_GC(date):
     DRYAIRMASS = np.einsum('lij->jil', DRYAIRMASS)
 
     # Total column
-    TOTCOL=(CH4*DRYAIRMASS).sum(axis=2)/DRYAIRMASS.sum(axis=2)
+    TOTCOL = (CH4*DRYAIRMASS).sum(axis=2)/DRYAIRMASS.sum(axis=2)
 
     met_data.close()
 
     # Pressure information (hPa)
     # pedge_filename=GC_datadir+'/GEOSChem.LevelEdgeDiags.'+date[0:8] +'.0000z.nc4'
-    pedge_filename=get_diagnostic('LevelEdgeDiags', date[:8])
+    pedge_filename=get_diagnostic('LevelEdgeDiags', short_date)
     pedge_data=xr.open_dataset(pedge_filename)
+    pedge_data=pedge_data.where(pedge_data.time.dt.hour == hour,
+                               drop=True).squeeze()
+
     PEDGE=pedge_data['Met_PEDGE'].values#[0,:,:,:]*100
     PEDGE=np.einsum('lij->jil',PEDGE)
     # LON=pedge_data['lon'].values
@@ -553,7 +556,7 @@ for index in range(1):#range(0,len(Sat_files)):
 
         # Get the GC data associated with the data we found above
         # (lon, lat, pedge, ch4, tropp (pbl depth?), dryair)
-        GC=all_date_GC[strdate[:8]]
+        GC=all_date_GC[strdate]
 
         # Find the grid box indices corresponding to the good TROPOMI
         # observations
