@@ -88,9 +88,10 @@ def read_tropomi(filename):
     pressures.fill(np.nan)
     pressures_mid=np.zeros([N1,N2,12], dtype=np.float)
     pressures_mid.fill(np.nan)
-    # for i in range(12+1):
-    #     pressures[:,:,i]=surface_pressure-i*pressure_interval
-    #     pressures_mid[:,:,i]=surface_pressure-(i+0.5)*pressure_interval
+    for i in range(12+1):
+        pressures[:,:,i]=surface_pressure-i*pressure_interval
+        if i < 12:
+            pressures_mid[:,:,i]=surface_pressure-(i+0.5)*pressure_interval
     # HN 2020/07/07 : converted from for loop to numpy
 
 
