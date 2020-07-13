@@ -3,7 +3,7 @@
 #SBATCH -p huce_intel
 #SBATCH -n 4      # cores requested
 #SBATCH -N 1      # nodes requested
-#SBATCH --mem=8000  # memory in Mb
+#SBATCH --mem=4000  # memory in Mb
 #SBATCH -o outfile  # send stdout to outfile
 #SBATCH -e errfile  # send stderr to errfile
 #SBATCH -t 4:00:00  # time requested in hour:minute:second
