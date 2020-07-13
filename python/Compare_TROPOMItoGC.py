@@ -398,7 +398,7 @@ def remap2(Sensi, data_type, Com_p, location, first_2):
 #Sat_datadir="/n/seasasfs02/hnesser/TROPOMI/downloads_201910/"
 Sat_datadir="/n/holyscratch01/jacob_lab/mwinter/newTROPOMI/"
 GC_datadir="/n/holyscratch01/jacob_lab/mwinter/Nested_NA/run_dirs/Hannah_NA_0000/OutputDir_2018/"
-outputdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/data_2018_ch4col/"
+outputdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/data_2018/"
 biasdir="/net/seasasfs02/srv/export/seasasfs02/share_root/mwinter/TROPOMI_processed/bias/"
 #Sensi_datadir="/n/holyscratch01/jacob_lab/zhenqu/aggregate/data/"
 
@@ -446,7 +446,7 @@ bcount = np.zeros((46,72))
 # Iterate throught the Sat_files we created
 #for index in range((1-1)*400,1*400):
 #for index in range(0,1):
-for index in range(1):#range(0,len(Sat_files)):
+for index in range(0,len(Sat_files)):#range(0,len(Sat_files)):
     print('========================')
 
     # Again, get the date of the sat file in question
