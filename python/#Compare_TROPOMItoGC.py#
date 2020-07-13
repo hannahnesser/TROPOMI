@@ -93,7 +93,12 @@ def read_tropomi(filename):
         if i < 12:
             pressures_mid[:,:,i]=surface_pressure-(i+0.5)*pressure_interval
     # HN 2020/07/07 : converted from for loop to numpy
-
+    print('TROPOMI surface pressure: ', 
+          np.nanmin(surface_pressure),
+          np.nanmax(surface_pressure))
+    print('TROPOMI pressure interval: ', 
+          np.nanmin(pressure_interval),
+          np.nanmax(pressure_interval))
 
     met['pressures']=pressures
     met['pressures_mid']=pressures_mid
@@ -176,6 +181,7 @@ def read_GC(date):
 
     PEDGE=pedge_data['Met_PEDGE'].values#[0,:,:,:]*100
     PEDGE=np.einsum('lij->jil',PEDGE)
+    print('PEDGE: ', PEDGE)
     # LON=pedge_data['lon'].values
     # LAT=pedge_data['lat'].values
 
@@ -446,7 +452,7 @@ bcount = np.zeros((46,72))
 # Iterate throught the Sat_files we created
 #for index in range((1-1)*400,1*400):
 #for index in range(0,1):
-for index in range(0,len(Sat_files)):#range(0,len(Sat_files)):
+for index in range(1):#range(0,len(Sat_files)):
     print('========================')
 
     # Again, get the date of the sat file in question
@@ -533,7 +539,7 @@ for index in range(0,len(Sat_files)):#range(0,len(Sat_files)):
     # pert = np.zeros([NN,1009],dtype=np.float)
 
     # Iterate through observations (individual pixels)
-    for iNN in range(NN):
+    for iNN in range(1):#range(NN):
         # Get indices of good TROPOMI observations
         iSat=sat_ind[0][iNN]
         jSat=sat_ind[1][iNN]
@@ -629,24 +635,32 @@ for index in range(0,len(Sat_files)):#range(0,len(Sat_files)):
             # perturbation = temp_gcsens-temp_gc
             # pert[iGC,jGC,isens] += (temp_gcsens-temp_gc)/0.5 # for grid aggregate
         #pert[iNN,:] = temp_gcsens/0.5 # for observation individual
-
+        print('------------------')
+        print('TROPOMI column: ', GC_base_posteri)
+        print('Lat: %.2f    Lon: %.2f' % (TROPOMI['latitude'][iSat, jSat],
+                                          TROPOMI['longitude'][iSat, jSat]))
+        print('GC Levels: ', GC_CH4)
+        print('AK Levels:')
+        for ll in range(12):
+            print(GC_WEIGHT[ll]*(priori[ll]/dry_air_subcolumns[ll]*1e9+AK[ll]*(Sat_CH4[ll] - priori[ll]/dry_air_subcolumns[ll]*1e9)))
 
 
         #print('GC_pos', GC_base_posteri)
         #print('GC_pri', GC_base_pri)
 
-        temp_obs_GC[iNN,0]=TROPOMI['methane'][iSat,jSat]
-        temp_obs_GC[iNN,1]=GC_base_posteri
-        temp_obs_GC[iNN,2]=TROPOMI['longitude'][iSat,jSat]
-        temp_obs_GC[iNN,3]=TROPOMI['latitude'][iSat,jSat]
-        temp_obs_GC[iNN,4]=iGC
-        temp_obs_GC[iNN,5]=jGC
-        temp_obs_GC[iNN,6]=TROPOMI['precision'][iSat,jSat]
-        temp_obs_GC[iNN,7]=TROPOMI['albedo'][iSat,jSat]
-        temp_obs_GC[iNN,8]=TROPOMI['aerosol_optical_depth'][iSat,jSat]
+        #temp_obs_GC[iNN,0]=TROPOMI['methane'][iSat,jSat]
+        #temp_obs_GC[iNN,1]=GC_base_posteri
+        #temp_obs_GC[iNN,2]=TROPOMI['longitude'][iSat,jSat]
+        #temp_obs_GC[iNN,3]=TROPOMI['latitude'][iSat,jSat]
+        #temp_obs_GC[iNN,4]=iGC
+        #temp_obs_GC[iNN,5]=jGC
+        #temp_obs_GC[iNN,6]=TROPOMI['precision'][iSat,jSat]
+        #temp_obs_GC[iNN,7]=TROPOMI['albedo'][iSat,jSat]
+        #temp_obs_GC[iNN,8]=TROPOMI['aerosol_optical_depth'][iSat,jSat]
 	#mrew - not sure
         # temp_obs_GC[iNN,9]=GC_albd
-        temp_obs_GC[iNN,9]=GC_COL
+
+        #TEMP_obs_GC[iNN,9]=GC_COL
 
         # Total error (unclear why not abs) in each grid cell
         #b[jGC, iGC] += GC_base_posteri - TROPOMI['methane'][iSat,jSat]
@@ -654,12 +668,12 @@ for index in range(0,len(Sat_files)):#range(0,len(Sat_files)):
         # Number of observations in each grid cell
         #bcount[jGC, iGC] += 1
 
-    result={}
-    result['obs_GC']=temp_obs_GC
+    #result={}
+    #result['obs_GC']=temp_obs_GC
     # result['KK']=pert
 
 
-    save_obj(result,outputdir+date+'_GCtoTROPOMI.pkl')
+    #save_obj(result,outputdir+date+'_GCtoTROPOMI.pkl')
 #b[bcount>0] = b[bcount>0]/bcount[bcount>0]
 #save_obj(b,biasdir+'1.pkl')
 print('CODE FINISHED')
