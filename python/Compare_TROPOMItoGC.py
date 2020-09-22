@@ -363,7 +363,7 @@ for date, filenames in Sat_files.items():
                                      LON_MIN, LON_MAX, LON_DELTA,
                                      LAT_MAX, LAT_MAX, LAT_DELTA)
     TROPOMI = xr.open_mfdataset(filenames, concat_dim='nobs',
-                                 preprocess=process)
+                                preprocess=process)
 
     # If already processed, skip the rest of the processing
     # within this loop
@@ -412,7 +412,7 @@ for date, filenames in Sat_files.items():
     GC_p = GC['PEDGE'].values[tGC, iGC, jGC, :]
     dryair = GC['DRYAIR'].values[tGC, iGC, jGC, :]
     GC_CH4 = GC['CH4'].values[tGC, iGC, jGC, :]
-    # GC_COL = GC['GCCOL'].values[tGC, iGC, jGC]
+    GC_COL = GC['GCCOL'].values[tGC, iGC, jGC]
 
     # Create mapping between GC and TROPOMI pressure levels
     intmap = get_intmap(TROPOMI['pressures'].values, GC_p)
