@@ -5,8 +5,8 @@
 # Set path
 #-----------------------------------------------------------------
 # set Input_Dir   = "/n/seasasfs02/hnesser/TROPOMI/oversampling_input_csvs/"
-set Input_Dir   = "/n/holyscratch01/jacob_lab/hnesser/TROPOMI/oversampling/input_csvs"
-set Output_Dir  = "/n/holyscratch01/jacob_lab/hnesser/TROPOMI/oversampling/output_csvs"
+set Input_Dir   = "/n/holyscratch01/jacob_lab/hnesser/TROPOMI/oversampling/input_csvs/"
+set Output_Dir  = "/n/holyscratch01/jacob_lab/hnesser/TROPOMI/oversampling/output_csvs/"
 # set Output_Dir  = "/n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs/"
 
 # Make the savedir, if necessary
