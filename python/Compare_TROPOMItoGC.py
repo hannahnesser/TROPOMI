@@ -183,8 +183,8 @@ def get_intmap(Sat_p, GC_p):
 
     # Case 3: Satellite pressures are between the top and bottom GC pressure
     # Criteria 1:
-    idx1 = (~np.greater(Sat_p, GC_p[:, 0].reshape(-1, 1)) &
-            ~np.less(Sat_p, GC_p[:, -1].reshape(-1, 1)))[:, None, :]
+    idx1 = (~np.greater_equal(Sat_p, GC_p[:, 0].reshape(-1, 1)) &
+            ~np.less_equal(Sat_p, GC_p[:, -1].reshape(-1, 1)))[:, None, :]
     idx1 = np.tile(idx1, (1, ngc, 1))
 
     lo = GC_p[:, 1:]
@@ -192,7 +192,7 @@ def get_intmap(Sat_p, GC_p):
     diff = hi - lo
 
     # Criteria 2: satellite pressure is between the geos-chem pressure levels
-    idx2 = (np.less(Sat_p[:, None, :], hi[:, :, None]) &
+    idx2 = (np.less_equal(Sat_p[:, None, :], hi[:, :, None]) &
             np.greater(Sat_p[:, None, :], lo[:, :, None]))
 
     # Combine the criteria
@@ -363,6 +363,7 @@ for date, filenames in Sat_files.items():
                                      LON_MIN, LON_MAX, LON_DELTA,
                                      LAT_MIN, LAT_MAX, LAT_DELTA)
     TROPOMI = xr.open_mfdataset(filenames, concat_dim='nobs',
+                                combine='nested',
                                 preprocess=process)
 
     # If already processed, skip the rest of the processing
