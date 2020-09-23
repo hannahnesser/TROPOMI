@@ -6,5 +6,8 @@
 #SBATCH --mem 20000
 #SBATCH -t 0-01:30
 #SBATCH --mail-type=END
+#SBATCH -J over_samp
+#SBATCH -o slurm.%x.%j.out # STDOUT
+#SBATCH -e slurm.%x.%j.err # STDERR
 
-./create_oversampling_csv_run.sh
+./oversampling.sh
