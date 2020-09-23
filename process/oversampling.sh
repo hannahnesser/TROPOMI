@@ -4,15 +4,23 @@
 #-----------------------------------------------------------------
 # Set path
 #-----------------------------------------------------------------
-set Input_Dir   = "/n/seasasfs02/hnesser/TROPOMI/oversampling_input_csvs/"
-set Output_Dir  = "/n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs/"
+# set Input_Dir   = "/n/seasasfs02/hnesser/TROPOMI/oversampling_input_csvs/"
+set Input_Dir   = "/n/holyscratch01/jacob_lab/hnesser/TROPOMI/oversampling/input_csvs"
+set Output_Dir  = "/n/holyscratch01/jacob_lab/hnesser/TROPOMI/oversampling/output_csvs"
+# set Output_Dir  = "/n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs/"
+
+# Make the savedir, if necessary
+if [[ ! -d $output_dir ]]; then
+  mkdir -p $output_dir
+fi
 
 #-----------------------------------------------------------------
 # Output resolution you want
 #-----------------------------------------------------------------
 set Res = 0.01
 
-set filenames = ("201909_combined_latlim.csv")
+# set filenames = ("201909_latlim.csv")
+set filenames = ( $( ls $Input_Dir ))
 
 foreach Input_Filename ($filenames)
 #-----------------------------------------------------------------
@@ -29,7 +37,7 @@ echo $Output_Filename
 # Call RegridPixel.x, and pass user inputs
 #-----------------------------------------------------------------
 ./RegridPixels.x<<EOF
-$Output_Dir 
+$Output_Dir
 $inin
 $Output_Filename
 $Res

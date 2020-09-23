@@ -361,7 +361,7 @@ for date, filenames in Sat_files.items():
     print('========================')
     process = lambda d: read_tropomi(d, date,
                                      LON_MIN, LON_MAX, LON_DELTA,
-                                     LAT_MAX, LAT_MAX, LAT_DELTA)
+                                     LAT_MIN, LAT_MAX, LAT_DELTA)
     TROPOMI = xr.open_mfdataset(filenames, concat_dim='nobs',
                                 preprocess=process)
 
