@@ -3,8 +3,8 @@
 #SBATCH -n 4
 #SBATCH -N 1
 #SBATCH -p huce_intel
-#SBATCH --mem 20000
-#SBATCH -t 0-01:30
+#SBATCH --mem 15000
+#SBATCH -t 0-10:00
 #SBATCH --mail-type=END
 #SBATCH -J over_samp
 #SBATCH -o slurm.%x.%j.out # STDOUT
