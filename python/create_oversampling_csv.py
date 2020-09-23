@@ -134,7 +134,7 @@ if __name__ == '__main__':
                  'lon0', 'lon1', 'lon2', 'lon3', 'lon',
                  'xch4', 'xch4_unc']]
         ds = ds[(ds['lat'] >= -80) & (ds['lat'] <= 80)]
-        ds.to_csv(join(save_dir, '%s_latlim.csv' % m),
+        ds.to_csv(join(save_dir, '%s_latlim.csv' % month),
                   sep=',',
                   float_format='%.6f',
                   header=False,
