@@ -10,9 +10,7 @@ set Output_Dir  = "/n/holyscratch01/jacob_lab/hnesser/TROPOMI/oversampling/outpu
 # set Output_Dir  = "/n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs/"
 
 # Make the savedir, if necessary
-if [[ ! -d $output_dir ]]; then
-  mkdir -p $output_dir
-fi
+if ( ! -d $Output_Dir ) mkdir -p $Output_Dir
 
 #-----------------------------------------------------------------
 # Output resolution you want
@@ -20,7 +18,7 @@ fi
 set Res = 0.01
 
 # set filenames = ("201909_latlim.csv")
-set filenames = ( $( ls $Input_Dir ))
+set filenames = (`find $Input_Dir -name "*latlim.csv"`)
 
 foreach Input_Filename ($filenames)
 #-----------------------------------------------------------------
