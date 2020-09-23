@@ -10,4 +10,8 @@
 #SBATCH -o slurm.%x.%j.out # STDOUT
 #SBATCH -e slurm.%x.%j.err # STDERR
 
+cd /n/holyscratch01/jacob_lab/hnesser/TROPOMI/oversampling/
+cp ${HOME}/TROPOMI/fortran/*.* .
+cp ${HOME}/TROPOMI/process/oversampling.sh
+
 ./oversampling.sh

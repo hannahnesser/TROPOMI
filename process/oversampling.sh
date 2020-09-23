@@ -18,7 +18,7 @@ if ( ! -d $Output_Dir ) mkdir -p $Output_Dir
 set Res = 0.01
 
 # set filenames = ("201909_latlim.csv")
-set filenames = (`find $Input_Dir -name "*latlim.csv"`)
+set filenames = (`find $Input_Dir -name "*latlim.csv" -printf "%f\n"`)
 
 foreach Input_Filename ($filenames)
 #-----------------------------------------------------------------
