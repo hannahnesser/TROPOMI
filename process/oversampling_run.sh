@@ -12,6 +12,6 @@
 
 cd /n/holyscratch01/jacob_lab/hnesser/TROPOMI/oversampling/
 cp ${HOME}/TROPOMI/fortran/*.* .
-cp ${HOME}/TROPOMI/process/oversampling.sh
+cp ${HOME}/TROPOMI/process/oversampling.sh .
 
 ./oversampling.sh
