@@ -47,9 +47,9 @@ def process_TROPOMI(data):
     #                         *1e-9/28.97e-3*9.8))
 
     # Rename variables
-    # data = data.rename({'nobs' : 'idx',
+    data = data.rename({'nobs' : 'idx',
                         # 'qa_value' : 'qa',
-    data = data.rename({'latitude_center' : 'lat',
+                        'latitude_center' : 'lat',
                         'longitude_center' : 'lon',
                         'xch4_corrected' : 'xch4',
                         'xch4_precision' : 'xch4_unc'})
@@ -64,7 +64,7 @@ def make_csv(file, save_loc, save_name):
     data = data.to_dataframe().reset_index()
 
     # Reorder the columns!
-    data = data[['nobs',
+    data = data[['idx',
                  'lat0', 'lat1', 'lat2', 'lat3', 'lat',
                  'lon0', 'lon1', 'lon2', 'lon3', 'lon',
                  'xch4', 'xch4_unc', 'qa',
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     ##end_num = int(sys.argv[2])
     for month, files in file_dict.items():
         print('Processing %s' % month)
-        ds = xr.open_mfdataset(files, concat_dim='nobs',
+        ds = xr.open_mfdataset(files, concat_dim='idx',
                                preprocess=process_TROPOMI,
                                combine='nested')
         ds = ds.to_dataframe().reset_index()
