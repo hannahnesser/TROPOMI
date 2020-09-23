@@ -11,8 +11,10 @@
 #SBATCH -e slurm.%x.%j.err # STDERR
 
 # download_subdir="/n/seasasfs02/hnesser/TROPOMI/downloads_14_14"
-DATADIR="/n/holyscratch01/jacob_lab/hnesser/TROPOMI/downloads_new/processed"
-SAVEDIR="/n/holyscratch01/jacob_lab/hnesser/TROPOMI/oversampling/input_csvs"
+ROOTDIR="/n/holyscratch01/jacob_lab/hnesser/TROPOMI"
+DATADIR="${ROOTDIR}/downloads_new/processed"
+SAVEDIR="${ROOTDIR}/oversampling/input_csvs"
+CODEDIR="${HOME}/TROPOMI"
 
 # either "Lorente2020" or "operational"
 data_version="Lorente2020"
@@ -23,12 +25,17 @@ if [[ ! -d $SAVEDIR ]]; then
   mkdir -p $SAVEDIR
 fi
 
+# move to holyscratch
+cd $ROOTDIR
+
 # Actiate python environment
 source activate troppy
 
 # Run the correct script
 if [[ data_version -eq "operational" ]]; then
+  cp ${CODEDIR}/python/create_oversampling_csv_oper.py .
   python create_oversampling_csv_oper.py $DATADIR $SAVEDIR $MINDATE
 elif [[ data_version -eq "Lorente2020" ]]; then
+  cp ${CODEDIR}/python/create_oversampling_csv.py .
   python create_oversampling_csv.py $DATADIR $SAVEDIR $MINDATE
 fi
