@@ -6,6 +6,9 @@
 #SBATCH --mem 40000
 #SBATCH -t 0-03:00
 #SBATCH --mail-type=END
+#SBATCH -J os_csv
+#SBATCH -o slurm.%x.%j.out # STDOUT
+#SBATCH -e slurm.%x.%j.err # STDERR
 
 # download_subdir="/n/seasasfs02/hnesser/TROPOMI/downloads_14_14"
 DATADIR="/n/holyscratch01/jacob_lab/hnesser/TROPOMI/downloads_new/processed"
@@ -16,8 +19,8 @@ data_version="Lorente2020"
 MINDATE="20180101" # inclusive
 
 # Make the savedir, if necessary
-if [[ ! -d $output_dir ]]; then
-  mkdir -p $output_dir
+if [[ ! -d $SAVEDIR ]]; then
+  mkdir -p $SAVEDIR
 fi
 
 # Actiate python environment

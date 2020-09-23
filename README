@@ -12,6 +12,7 @@ The scripts should be run as follows:
 
 2. create_oversampling_csv_run.sh : Change input directory
    and minimum date (after that date, process the data)
+   and run the script.
 
    HON 2020/09/22: Changed the python environment and added
    a line for which TROPOMI product should be used. Created
@@ -20,8 +21,11 @@ The scripts should be run as follows:
    Also rewrote create_oversampling_csv.py to handle the
    new TROPOMI product.
 
-3. oversampling.sh : Edit the list of input files but
+3. [SKIP] oversampling.sh : Edit the list of input files but
    DO NOT RUN.
+
+   HON 2020/09/22: No longer need to edit list of files, can
+   skip directly to step 4.
 
 4. oversampling_run.sh : Run.
 
@@ -41,3 +45,5 @@ Edit record:
             everything still works.
 	         Renamed oversampling_fortran/ directory to fortran/
 	         and did NOT adjust any run scripts.
+
+**Notes: Need to write a master script to create dependency jobs
