@@ -32,10 +32,12 @@ cd $ROOTDIR
 source activate troppy
 
 # Run the correct script
-if [[ data_version -eq "operational" ]]; then
+if [[ data_version == "operational" ]]; then
+  echo "Using operational product."
   cp ${CODEDIR}/python/create_oversampling_csv_oper.py .
   python create_oversampling_csv_oper.py $DATADIR $SAVEDIR $MINDATE
-elif [[ data_version -eq "Lorente2020" ]]; then
+elif [[ data_version == "Lorente2020" ]]; then
+  echo "Using albedo-corrected science product"
   cp ${CODEDIR}/python/create_oversampling_csv.py .
   python create_oversampling_csv.py $DATADIR $SAVEDIR $MINDATE
 fi
