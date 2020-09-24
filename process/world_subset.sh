@@ -21,8 +21,12 @@ ALL=($NAM $SAM $AFR $EUR $PAC)
 
 # Code directory
 PYDIR=${HOME}/TROPOMI/python
-INDIR="/n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs/base/"
-OUTDIR="/n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs/world/"
+INDIR="/n/holyscratch01/jacob_lab/hnesser/TROPOMI/oversampling/output_csvs/"
+OUTDIR="/n/holyscratch01/jacob_lab/hnesser/TROPOMI/oversampling/output_csvs/world/"
+
+if [[ ! -d $OUTDIR ]]; then
+  mkdir -p $OUTDIR
+fi
 
 python ${PYDIR}/subset_oversampling.py $INDIR $OUTDIR "${ALL[@]}"
 
@@ -32,3 +36,6 @@ echo $region
 python ${PYDIR}/group_oversampling.py $OUTDIR "${region%%,*}"
 python ${PYDIR}/plot_oversampling.py $OUTDIR $region
 done
+
+cp ${OUTDIR}/*.csv* /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/base/
+cp ${OUTDIR}/world/* /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/world/
