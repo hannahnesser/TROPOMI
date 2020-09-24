@@ -2,7 +2,7 @@
 
 #SBATCH -n 15
 #SBATCH -N 1
-#SBATCH -p huce_amd
+#SBATCH -p huce_intel
 #SBATCH --mem 60000
 #SBATCH -t 0-04:00
 #SBATCH --mail-type=END
