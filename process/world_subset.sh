@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#SBATCH -n 15
+#SBATCH -n 6
 #SBATCH -N 1
 #SBATCH -p huce_intel
-#SBATCH --mem 10000
+#SBATCH --mem 20000
 #SBATCH -t 0-10:00
 #SBATCH --mail-type=END
 #SBATCH -J subset
@@ -40,5 +40,5 @@ python ${PYDIR}/group_oversampling.py $OUTDIR "${region%%,*}"
 # python ${PYDIR}/plot_oversampling.py $OUTDIR $region
 done
 
-cp ${OUTDIR}/*.csv* /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/base/
-cp ${OUTDIR}/world/* /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/world/
+cp ${OUTDIR}*.csv* /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/base/
+cp ${OUTDIR}world/* /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/world/

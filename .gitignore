@@ -2,6 +2,7 @@
 */archive
 *~
 */*~
-*/slurm-*
+*/slurm*
 */#*
+*/.#*
 Python/__pycache__
