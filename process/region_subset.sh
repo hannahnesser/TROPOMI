@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#SBATCH -n 15
+#SBATCH -n 6
 #SBATCH -N 1
 #SBATCH -p huce_amd
-#SBATCH --mem 60000
+#SBATCH --mem 20000
 #SBATCH -t 0-04:00
 #SBATCH --mail-type=END
 
@@ -41,6 +41,6 @@ for region in "${ALL[@]}"
 do
 echo $region
 python ${PYDIR}/group_oversampling.py $OUTDIR "${region%%,*}"
-#python ${PYDIR}/plot_oversampling.py $OUTDIR $region
+python ${PYDIR}/plot_oversampling_new.py $OUTDIR $region
 done
 

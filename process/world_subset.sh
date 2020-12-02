@@ -31,7 +31,8 @@ if [[ ! -d $OUTDIR ]]; then
   mkdir -p $OUTDIR
 fi
 
-python ${PYDIR}/subset_oversampling.py $INDIR $OUTDIR "${ALL[@]}"
+# Only needs to be run once. 
+#python ${PYDIR}/subset_oversampling.py $INDIR $OUTDIR "${ALL[@]}"
 
 for region in "${ALL[@]}"
 do
@@ -40,5 +41,5 @@ python ${PYDIR}/group_oversampling.py $OUTDIR "${region%%,*}"
 # python ${PYDIR}/plot_oversampling.py $OUTDIR $region
 done
 
-cp ${OUTDIR}*.csv* /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/base/
-cp ${OUTDIR}world/* /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/world/
+cp ${INDIR}*.csv* /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/base/
+cp -r ${OUTDIR} /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/world
