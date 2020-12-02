@@ -30,7 +30,7 @@ import config
 
 # Other font details
 rcParams['font.family'] = 'sans-serif'
-rcParams['font.sans-serif'] = 'AppleGothic'
+rcParams['font.sans-serif'] = 'Arial'
 rcParams['font.size'] = config.LABEL_FONTSIZE*config.SCALE
 rcParams['text.usetex'] = True
 # rcParams['mathtext.fontset'] = 'stixsans'

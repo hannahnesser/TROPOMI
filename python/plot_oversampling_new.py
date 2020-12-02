@@ -28,7 +28,7 @@ import shapefile as shp
 colors = plt.cm.get_cmap('inferno', lut=8)
 
 # Other font details
-rcParams['font.family'] = 'serif'
+rcParams['font.family'] = 'sans-serif'
 rcParams['font.size'] = config.LABEL_FONTSIZE*config.SCALE
 rcParams['text.usetex'] = True
 

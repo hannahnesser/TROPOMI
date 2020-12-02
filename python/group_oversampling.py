@@ -8,9 +8,12 @@ data_dir = sys.argv[1]
 region = sys.argv[2]
 data_dir = join(data_dir, region)
 
+print('Processing %s' % region)
+
 files = listdir(data_dir)
 files = [f for f in files if f[-3:] == 'csv']
 files.sort(reverse=True)
+print(files)
 
 yr_mo = [f[:6] for f in files]
 yrs = [int(f[:4]) for f in files]
@@ -41,4 +44,4 @@ for s, mlist in seasons.items():
         t = t.rename(columns={'xch4_tot' : 'xch4', 'cnt_tot' : 'cnt'})
         t = t.reset_index()
         t.to_csv(join(data_dir, s + '_' + region + '.csv'), index=False)
-        
+
