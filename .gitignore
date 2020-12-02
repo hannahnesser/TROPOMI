@@ -3,3 +3,5 @@
 *~
 */*~
 */slurm-*
+*/#*
+Python/__pycache__
