@@ -11,7 +11,7 @@ import datetime
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
-sys.path.append('/Users/hannahnesser/Documents/Harvard/Research/Python/')
+sys.path.append('.')
 import format_plots as fp
 import config as config
 
@@ -31,23 +31,6 @@ colors = plt.cm.get_cmap('inferno', lut=8)
 rcParams['font.family'] = 'serif'
 rcParams['font.size'] = config.LABEL_FONTSIZE*config.SCALE
 rcParams['text.usetex'] = True
-
-
-##########################
-# Set default file paths
-BASE_DIR = '/Users/hannahnesser/Documents/Harvard/Research/TROPOMI/oversampling_output/new_data'
-DATA_DIR = join(BASE_DIR, 'northamerica')
-PLOT_DIR = join(BASE_DIR, 'plots')
-##########################
-
-latlim = np.array([10, 70])
-lonlim = np.array([-140, -40])
-res = 0.01
-vmin = 1800
-vmax = 1900
-count_min = 5
-
-plot_options = {'vmin' : vmin, 'vmax' : vmax, 'cmap' : 'inferno'}
 
 def plot_TROPOMI(data, latlim, lonlim, res, figax=None, title='', genkml=False, vals='xch4', **plot_options):
     # Set default plot options]
@@ -87,51 +70,70 @@ def plot_TROPOMI(data, latlim, lonlim, res, figax=None, title='', genkml=False, 
                       cmap=plot_options['cmap'],
                       edgecolors=None)
 
-#     if not genkml:
-# #         ax.set_title(title, fontsize=15, y=1.05)
-# #         ax.set_extent(lonlim + latlim)
-#         ax.add_wms(wms='http://vmap0.tiles.osgeo.org/wms/vmap0',
-#                    layers=['basic'])
-#         ax.gridlines(linestyle=':', draw_labels=True, color='grey')
-
     return fig, ax, c
 
-files = listdir(DATA_DIR)
-files = [f for f in files if f[:4] == '2018']
-files.sort()
-print(files)
+if __name__ == '__main__':
+    DATA_DIR = sys.argv[1]
+    REGION = str(sys.argv[2].split(',')[0])
+    DATA_DIR = join(DATA_DIR, REGION)
 
+    region_dict = {'ITAIPU' : 'Itaipu',
+                   'TUCURUI' : 'Tucurui',
+                   'ROBERTBOURASSA' : 'Robert-Bourassa (La Grande-2)',
+                   'ITUMBIARA' : 'Itumbiara',
+                   'PAMPULHA' : 'Pampulha',
+                   'SEGREDO' : 'Segredo',
+                   'HARTWELL' : 'Hartwell',
+                   'FURNAS' : 'Furnas',
+                   'LAFORGE' : 'Laforge-1',
+                   'BARRABONITA' : 'Barra Bonita ',
+                   'FUNIL' : 'Funil',
+                   'BALBINA' : 'Balbina',
+                   'WATTSBAR' : 'Watts Bar',
+                   'EASTMAIN' : 'Eastmain 1',
+                   'DOUGLAS' : 'Douglas',
+                   'KARIBA' : 'Kariba'}
 
-for f in files:
-    print('Plotting %s' % f)
-    full_date = f[:6]
-    year = full_date[:4]
-    month = full_date[-2:]
-    month_name = datetime.date(1900, int(month), 1).strftime('%B')
+    latlim = np.array(sys.argv[2].split(',')[1:3])
+    lonlim = np.array(sys.argv[2].split(',')[3:])
+    res = 0.01
+    vmin = 1800
+    vmax = 1900
+    count_min = 1
+    plot_options = {'vmin' : vmin, 'vmax' : vmax, 'cmap' : 'inferno'}
 
-    fig, ax = fp.get_figax(maps=True, lats=latlim, lons=lonlim,
-                           max_width=config.BASE_WIDTH,
-                           max_height=config.BASE_HEIGHT)
-    ax = fp.format_map(ax, latlim, lonlim, draw_labels=False)
+    files = listdir(DATA_DIR)
+    files = [f for f in files if f[-3:] == 'csv']
+    files.sort()
+    print(files)
 
-    data = pd.read_csv(join(DATA_DIR, f))
+    for f in files:
+        print('Plotting %s' % f)
+        full_date = f.split('_')[0]
+        year = full_date[:4]
+        if len(full_date) == 6:
+            month = full_date[-2:]
+            month_name = datetime.date(1900, int(month), 1).strftime('%B')
+            title = '%s %s %s' (region_dict[region], month_name, year)
+        else:
+            title = '%s %s %s' (region_dict[region], full_date[:3:], year)
 
-    fig, ax, c = plot_TROPOMI(data, latlim, lonlim, res,
-                              figax=[fig, ax],
-                              vals='xch4',
-                                **plot_options)
-    # fig.suptitle(r'TROPOMI XCH$_4$',
-    #              fontsize=config.TITLE_FONTSIZE*config.SCALE)
-    # ax = fp.add_title(ax, '', fontsize=SUBTITLE_FONTSIZE*SCALE)
-    cax = fp.add_cax(fig, ax)
-    cbar = fig.colorbar(c, cax=cax)
-    cbar = fp.format_cbar(cbar, 'XCH4 (ppb)')
-    fp.add_title(ax, title='%s %s' % (month_name, year))
+        fig, ax = fp.get_figax(maps=True, lats=latlim, lons=lonlim,
+                               max_width=config.BASE_WIDTH,
+                               max_height=config.BASE_HEIGHT)
+        ax = fp.format_map(ax, latlim, lonlim, draw_labels=False)
 
-    # Save plot
-    fp.save_fig(fig, PLOT_DIR, 'TROPOMI_%s' % full_date)
+        data = pd.read_csv(join(DATA_DIR, f))
 
-# # Save plot
-# fig01.savefig(join(plots, 'fig01_gosat_obs.png'),
-#              bbox_inches='tight')
-# print('Saved fig01_gosat_obs.png')
+        fig, ax, c = plot_TROPOMI(data, latlim, lonlim, res,
+                                  figax=[fig, ax],
+                                  vals='xch4',
+                                    **plot_options)
+
+        cax = fp.add_cax(fig, ax)
+        cbar = fig.colorbar(c, cax=cax)
+        cbar = fp.format_cbar(cbar, 'XCH4 (ppb)')
+        fp.add_title(ax, title=title)
+
+        # Save plot
+        fp.save_fig(fig, DATA_DIR, '%s' % full_date)
