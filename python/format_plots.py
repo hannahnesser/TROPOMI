@@ -4,7 +4,6 @@ from numpy.linalg import inv, norm, eigh
 from scipy.sparse import diags, identity
 from scipy.stats import linregress
 import pandas as pd
-from tqdm import tqdm
 import copy
 from os.path import join
 
@@ -30,7 +29,7 @@ import config
 
 # Other font details
 rcParams['font.family'] = 'sans-serif'
-rcParams['font.sans-serif'] = 'Arial'
+rcParams['font.sans-serif'] = 'AppleGothic'
 rcParams['font.size'] = config.LABEL_FONTSIZE*config.SCALE
 rcParams['text.usetex'] = True
 # rcParams['mathtext.fontset'] = 'stixsans'
@@ -39,7 +38,6 @@ rcParams['axes.titlepad'] = config.TITLE_PAD
 
 from matplotlib.font_manager import findfont, FontProperties
 font = findfont(FontProperties(family=['sans-serif']))
-print(font)
 
 def color(k, cmap='inferno', lut=10):
     c = plt.cm.get_cmap(cmap, lut=lut)
@@ -112,7 +110,7 @@ def make_axes(rows=1, cols=1, aspect=None,
     # plt.subplots_adjust(right=1)
     return fig, ax
 
-def add_cax(fig, ax):
+def add_cax(fig, ax, cbar_pad_inches=0.25):
     # should be updated to infer cbar width and cbar_pad_inches
     try:
         axis = ax[-1, -1]
@@ -126,16 +124,15 @@ def add_cax(fig, ax):
         height = ax.get_position().height
 
     # x0
-    cbar_pad_inches = 0.25
     fig_width = fig.get_size_inches()[0]
     x0_init = axis.get_position().x1
-    x0 = (fig_width*x0_init + cbar_pad_inches)/fig_width
+    x0 = (fig_width*x0_init + cbar_pad_inches*config.SCALE)/fig_width
 
     # y0
     y0 = axis.get_position().y0
 
     # Width
-    cbar_width_inches = 0.1
+    cbar_width_inches = 0.1*config.SCALE
     width = cbar_width_inches/fig_width
 
     # Make axis
@@ -204,7 +201,7 @@ def add_subtitle(ax, subtitle, **kwargs):
                            **kwargs)
     return ax
 
-def get_square_limits(xdata, ydata):
+def get_square_limits(xdata, ydata, **kw):
     # Get data limits
     dmin = min(np.min(xdata), np.min(ydata))
     dmax = max(np.max(xdata), np.max(ydata))
@@ -214,8 +211,8 @@ def get_square_limits(xdata, ydata):
 
     try:
         # get lims
-        ylim = kw.pop('ylim')
-        xlim = kw.pop('xlim')
+        ylim = kw.pop('lims')
+        xlim = ylim
         xy = (min(xlim[0], ylim[0]), max(xlim[1], ylim[1]))
     except:
         # set lims
