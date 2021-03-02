@@ -1,16 +1,17 @@
 #!/bin/bash
 
-#SBATCH -n 6
+#SBATCH -n 3
 #SBATCH -N 1
 #SBATCH -p huce_intel
-#SBATCH --mem 20000
+#SBATCH --mem 10000
 #SBATCH -t 0-10:00
 #SBATCH --mail-type=END
-#SBATCH -J subset
+#SBATCH -J world
 #SBATCH -o slurm.%x.%j.out # STDOUT
 #SBATCH -e slurm.%x.%j.err # STDERR
 
 source activate invpy
+export OMP_NUM_THREADS=4
 
 # regions and lat/lon limits
 # "region_name,latmin,latmax,lonmin,lonmax"
@@ -37,9 +38,9 @@ fi
 for region in "${ALL[@]}"
 do
 echo $region
-python ${PYDIR}/group_oversampling.py $OUTDIR "${region%%,*}"
-# python ${PYDIR}/plot_oversampling.py $OUTDIR $region
+#python ${PYDIR}/group_oversampling.py $OUTDIR "${region%%,*}"
+python ${PYDIR}/plot_oversampling.py $OUTDIR $region
 done
 
-cp ${INDIR}*.csv* /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/base/
-cp -r ${OUTDIR} /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/world
+#cp ${INDIR}*.csv* /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/base/
+#cp -r ${OUTDIR} /n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/world

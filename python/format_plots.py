@@ -29,12 +29,12 @@ from cartopy.mpl.patch import geos_to_path
 import config
 
 # Other font details
-rcParams['font.family'] = 'sans-serif'
-rcParams['font.sans-serif'] = 'Arial'
+rcParams['font.family'] = 'serif'
+#rcParams['font.sans-serif'] = 'Arial'
 rcParams['font.size'] = config.LABEL_FONTSIZE*config.SCALE
-rcParams['text.usetex'] = True
+#rcParams['text.usetex'] = True
 # rcParams['mathtext.fontset'] = 'stixsans'
-rcParams['text.latex.preamble'] = r'\usepackage{cmbright}'
+#rcParams['text.latex.preamble'] = r'\usepackage{cmbright}'
 rcParams['axes.titlepad'] = config.TITLE_PAD
 
 from matplotlib.font_manager import findfont, FontProperties

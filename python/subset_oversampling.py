@@ -43,7 +43,7 @@ if __name__ == '__main__':
     
     regions = {}
     for r in sys.argv[3:]:
-        regions[r.split(',')[0]] = np.array(r.split(',')[1:]).astype(float)    
+        regions[r.split(',')[0]] = np.array(r.split(',')[1:5]).astype(float)    
 
     for f in files:
         print('')
