@@ -5,15 +5,22 @@ import sys
 import pandas as pd
 import numpy as np
 import xarray as xr
+import math
+
+import datetime
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
+from cartopy import feature as cf
+sys.path.append('.')
+import format_plots as fp
+import config as config
 
-from fastkml import kml
-from lxml import etree
-from simplekml import (Kml, OverlayXY, ScreenXY, Units, RotationXY,
-                       AltitudeMode, Camera)
+# from fastkml import kml
+# from lxml import etree
+# from simplekml import (Kml, OverlayXY, ScreenXY, Units, RotationXY,
+#                        AltitudeMode, Camera)
 
 import cartopy.crs as ccrs
 import cartopy
@@ -25,8 +32,8 @@ environ['QT_QPA_PLATFORM']='offscreen'
 
 colors = plt.cm.get_cmap('inferno', lut=8)
 
-rcParams['font.family'] = 'serif'
-rcParams['font.size'] = 14
+# rcParams['font.family'] = 'sans-serif'
+rcParams['font.size'] = config.LABEL_FONTSIZE*config.SCALE
 
 def plot_TROPOMI(data, latlim, lonlim, res, figax=None, title='', genkml=False, vals='xch4', **plot_options):
     # Define edges
@@ -34,11 +41,11 @@ def plot_TROPOMI(data, latlim, lonlim, res, figax=None, title='', genkml=False, 
     lon_steps = (lonlim[1]-lonlim[0])/res + 1
     if (lat_steps != int(lat_steps)) or (lon_steps != int(lon_steps)):
         sys.exit('Bad interval.')
-    
-    lats = np.around(np.linspace(latlim[0], latlim[1], int(lat_steps)) + res/2, 
+
+    lats = np.around(np.linspace(latlim[0], latlim[1], int(lat_steps)) + res/2,
                      len(str(res/2).split('.')[1]))
     lats_s = pd.DataFrame({'idx' : np.ones(len(lats)-1), 'lat' : lats[:-1]})
-    lons = np.around(np.linspace(lonlim[0], lonlim[1], int(lon_steps)) + res/2, 
+    lons = np.around(np.linspace(lonlim[0], lonlim[1], int(lon_steps)) + res/2,
                      len(str(res/2).split('.')[1]))
     lons_s = pd.DataFrame({'idx' : np.ones(len(lons)-1), 'lon' : lons[:-1]})
     df = pd.merge(lats_s, lons_s, on='idx').drop(columns='idx')
@@ -51,25 +58,25 @@ def plot_TROPOMI(data, latlim, lonlim, res, figax=None, title='', genkml=False, 
     plot_options['vmin'] = plot_options.pop('vmin', math.floor(data[vals].min()/50)*50)
     plot_options['vmax'] = plot_options.pop('vmax', math.ceil(data[vals].max()/50)*50)
     plot_options['cmap'] = plot_options.pop('cmap', 'inferno')
-    
+
     if figax is None:
         fig, ax = plt.subplots(figsize=(10,10), subplot_kw={'projection' : ccrs.PlateCarree()})
     else:
         fig, ax = figax
 
-    c = ax.pcolormesh(lons, lats, d_p, 
-                      snap=True, 
-                      vmin=plot_options['vmin'], vmax=plot_options['vmax'], 
+    c = ax.pcolormesh(lons, lats, d_p,
+                      snap=True,
+                      vmin=plot_options['vmin'], vmax=plot_options['vmax'],
                       cmap=plot_options['cmap'],
                       edgecolors=None)
-    
-    if not genkml:        
+
+    if not genkml:
         ax.set_title(title, fontsize=15, y=1.05)
         ax.set_extent(lonlim + latlim)
         ax.add_wms(wms='http://vmap0.tiles.osgeo.org/wms/vmap0',
                    layers=['basic'])
         ax.gridlines(linestyle=':', draw_labels=True, color='grey')
-    
+
     return fig, ax, c
 
 def make_kml(llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat,
@@ -128,153 +135,87 @@ def make_kml(llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat,
     kmzfile = kw.pop('kmzfile', 'overlay.kmz')
     kml.savekmz(kmzfile)
 
-def gearth_fig(llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat, pixels=1024):
-    """Return a Matplotlib `fig` and `ax` handles for a Google-Earth Image."""
-    aspect = np.cos(np.mean([llcrnrlat, urcrnrlat]) * np.pi/180.0)
-    xsize = np.ptp([urcrnrlon, llcrnrlon]) * aspect
-    ysize = np.ptp([urcrnrlat, llcrnrlat])
-    aspect = ysize / xsize
+# def gearth_fig(llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat, pixels=1024):
+#     """Return a Matplotlib `fig` and `ax` handles for a Google-Earth Image."""
+#     aspect = np.cos(np.mean([llcrnrlat, urcrnrlat]) * np.pi/180.0)
+#     xsize = np.ptp([urcrnrlon, llcrnrlon]) * aspect
+#     ysize = np.ptp([urcrnrlat, llcrnrlat])
+#     aspect = ysize / xsize
 
-    if aspect > 1.0:
-        figsize = (10.0 / aspect, 10.0)
-    else:
-        figsize = (10.0, 10.0 * aspect)
+#     if aspect > 1.0:
+#         figsize = (10.0 / aspect, 10.0)
+#     else:
+#         figsize = (10.0, 10.0 * aspect)
 
-    if False:
-        plt.ioff()  # Make `True` to prevent the KML components from poping-up.
-    fig = plt.figure(figsize=figsize,
-                     frameon=False,
-                     dpi=pixels//10)
-    # KML friendly image.  If using basemap try: `fix_aspect=False`.
-    ax = fig.add_axes([0, 0, 1, 1])
-    ax.set_xlim(llcrnrlon, urcrnrlon)
-    ax.set_ylim(llcrnrlat, urcrnrlat)
-    return fig, ax
-
-def plot_ong(data_dir, lat, lon, res=0.01,
-             count_min=1, shape=None, **plot_options):
-    files = listdir(data_dir)
-    files = [f for f in files if (len(f.split('_')[0]) == 6)
-                               & (f.split('.')[-1] == 'csv')]
-    files.sort()
-    
-    for i, f in enumerate(files):
-        fig, ax = plt.subplots(1, 2, figsize=((lat[1] - lat[0])*2*2 + 5, 
-                                              (lon[1] - lon[0])*2),
-                           subplot_kw={'projection' : ccrs.PlateCarree()})
-        fig.suptitle('%s-%s' % (f.split('_')[0][:4], f.split('_')[0][-2:]),
-                     fontsize=30)
-        plt.subplots_adjust(wspace=0.1)
-        
-        data = pd.read_csv(join(data_dir, f + ''))
-        data = data[data['cnt'] >= count_min]
-        
-        plot_options = {}
-        fig, ax[0], c = plot_TROPOMI(data, lat, lon, res, 
-                                     vals='xch4',
-                                     figax=[fig, ax[0]],
-                                     **plot_options)
-        fig.colorbar(c, ax=ax[0], pad=0.1)
-        
-        _, deciles = pd.qcut(data['xch4'], q=10, retbins=True)
-        background = deciles[1]
-        data['enhancement'] = data['xch4'] - background
-        plot_options['cmap'] = plot_options.pop('cmap', 'Reds')
-        plot_options['vmin'] = 0
-        plot_options['vmax'] = math.ceil(data['enhancement'].max()/10)*10
-        fig, ax[1], c = plot_TROPOMI(data, lat, lon, res, 
-                                     vals='enhancement',
-                                     figax=[fig, ax[1]],
-                                     **plot_options)
-        fig.colorbar(c, ax=ax[1], pad=0.1)
-
-        if shape is not None:
-            for axis in ax:
-                outline = plt.Polygon(p, fill=False, edgecolor='black', linewidth=2)
-                axis.add_patch(outline)
-        
-        fig.savefig(join(data_dir, f.split('.')[0] + '.png'))
+#     if False:
+#         plt.ioff()  # Make `True` to prevent the KML components from poping-up.
+#     fig = plt.figure(figsize=figsize,
+#                      frameon=False,
+#                      dpi=pixels//10)
+#     # KML friendly image.  If using basemap try: `fix_aspect=False`.
+#     ax = fig.add_axes([0, 0, 1, 1])
+#     ax.set_xlim(llcrnrlon, urcrnrlon)
+#     ax.set_ylim(llcrnrlat, urcrnrlat)
+#     return fig, ax
 
 if __name__ == '__main__':
-    data_dir = sys.argv[1]
-    region   = str(sys.argv[2].split(',')[0])
-    data_dir = join(data_dir, region)
-    print('Processing %s' % region)
+    DATA_DIR = sys.argv[1]
+    REGION   = str(sys.argv[2].split(',')[0])
+    print('Processing %s' % REGION)
 
-    if data_dir.split('/')[-2] == 'world':
-        genkml = True
-        print('Generating Google Earth Files.')
-    else:
-        genkml = False
-
-    latlon = np.array(sys.argv[2].split(',')[1:]).astype(float)
-
-    res  = 0.01
-    vmin = 1700
-    vmax = 1900
-    plot_options = {'vmin' : vmin, 'vmax' : vmax}
+    lat = float(sys.argv[2].split(',')[5])
+    lon = float(sys.argv[2].split(',')[6])
+    latlim = np.array([lat - 1, lat + 1]).round(2)
+    lonlim = np.array([lon - 1, lon + 1]).round(2)
+    res = 0.01
     count_min = 1
 
-    # Get pngs
-    files = listdir(data_dir)
-    kml_pngs = [f for f in files if (f.split('.')[-1] == 'png')
-                                  & (f != 'legend.png')
-                                  & (f.split('.')[-2][-3:] != 'old')]
-    files = [f for f in files if (len(f.split('_')[0]) == 7)
-                               & (f.split('.')[-1] == 'csv')
-                               & (f[:-4] + '.png' not in kml_pngs)]
+    files = listdir(DATA_DIR)
+    files = [f for f in files if f[-3:] == 'csv']
+    files.sort()
 
-    # Seasonal plotting
-    #kml_pngs = []
-    for i, f in enumerate(files):
-        print('Plotting %s.' % f)
-        data = pd.read_csv(join(data_dir, f))
-        data = data[data['cnt'] >= count_min]
-        
-        plt.ioff()
+    print(files)
 
-        fig, ax = gearth_fig(llcrnrlon=latlon[2],
-                             llcrnrlat=latlon[0],
-                             urcrnrlon=latlon[3],
-                             urcrnrlat=latlon[1],
-                             pixels=1000)
-        print('Basis figure generated.')
+    # for f in files:
+    #     data = pd.read_csv(join(DATA_DIR, f))
+    #     data = data[(data['lon'] >= lonlim[0]) &
+    #                 (data['lon'] <= lonlim[1]) &
+    #                 (data['lat'] >= latlim[0]) &
+    #                 (data['lat'] <= latlim[1])]
 
-        fig, ax, c = plot_TROPOMI(data, 
-                                  latlon[:2], 
-                                  latlon[2:], 
-                                  res,
-                                  figax=[fig, ax],
-                                  genkml=genkml,
-                                  **plot_options)
-        print('Figure complete.')
+    #     print('Plotting %s' % f)
+    #     full_date = f.split('_')[0]
+    #     year = full_date[:4]
+    #     if len(full_date) == 6:
+    #         month = full_date[-2:]
+    #         month_name = datetime.date(1900, int(month), 1).strftime('%B')
+    #         title = '%s %s %s' % (region_dict[REGION], month_name, year)
+    #     else:
+    #         title = '%s %s %s' % (region_dict[REGION], full_date[-3:], year)
 
-        ax.set_axis_off()
-        
-        save_name = f.split('.')[0] + '.png'
-        kml_pngs.append(join(data_dir, save_name))
-        fig.savefig(join(data_dir, save_name), 
-                    transparent=True,
-                    format='png')
-        print('Figure saved at %s.' % join(data_dir, save_name))
+    #     fig, ax = fp.get_figax(maps=True, lats=latlim, lons=lonlim,
+    #                            max_width=config.BASE_WIDTH,
+    #                            max_height=config.BASE_HEIGHT)
+    #     ax = fp.format_map(ax, latlim, lonlim, draw_labels=False)
 
-        # Color bar time 
-        if genkml and (i == (len(files) - 1)):
-            fig = plt.figure(figsize=(1.5, 6.0), facecolor=None, frameon=False)
-            ax = fig.add_axes([0.05, 0.05, 0.2, 0.9])
-            cb = fig.colorbar(c, cax=ax)
-            cb.set_label(r'XCH$_4$ [ppb]', rotation=-90, color='white', labelpad=20)
-            cb.ax.tick_params(color='white', labelcolor='white')
-            cb.outline.set_edgecolor('white')
-            fig.savefig(join(data_dir, 'legend.png'), transparent=True, format='png')
+    #     # calculate vmin and vmax
+    #     vmin = 1800
+    #     vmax = 1900
+    #     plot_options = {'vmin' : vmin,
+    #                     'vmax' : vmax,
+    #                     'cmap' : 'plasma'}
 
-    if genkml:
-        # Now join them together as a kml
-        print('Creating kmz from:')
-        kml_pngs.sort()
-        print(kml_pngs)
-        make_kml(llcrnrlon=latlon[2], llcrnrlat=latlon[0],
-                 urcrnrlon=latlon[3], urcrnrlat=latlon[1],
-                 figs=kml_pngs, colorbar=join(data_dir, 'legend.png'),
-                 kmzfile=join(data_dir, region + '_xch4_seasonal.kmz'), 
-                 color='white')
+    #     fig, ax, c = plot_TROPOMI(data, latlim, lonlim, res,
+    #                               figax=[fig, ax],
+    #                               vals='xch4',
+    #                               **plot_options)
+
+    #     cax = fp.add_cax(fig, ax)
+    #     cbar = fig.colorbar(c, cax=cax)
+    #     cbar = fp.format_cbar(cbar, 'XCH4 (ppb)')
+    #     fp.add_title(ax, title=title, y=1.1)
+
+    #     # Save plot
+    #     fp.save_fig(fig, DATA_DIR, '%s_%s' % (REGION, full_date))
+    #     plt.close()
+    #     print('\n')
