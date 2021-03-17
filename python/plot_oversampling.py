@@ -25,7 +25,7 @@ environ['QT_QPA_PLATFORM']='offscreen'
 
 colors = plt.cm.get_cmap('inferno', lut=8)
 
-rcParams['font.family'] = 'serif'
+rcParams['font.family'] = 'sans-serif'
 rcParams['font.size'] = 14
 
 def plot_TROPOMI(data, latlim, lonlim, res, figax=None, title='', genkml=False, vals='xch4', **plot_options):
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     print('Processing %s' % region)
 
     if data_dir.split('/')[-2] == 'world':
-        genkml = True
+        genkml = False
         print('Generating Google Earth Files.')
     else:
         genkml = False
