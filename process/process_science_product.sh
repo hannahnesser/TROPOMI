@@ -1,10 +1,13 @@
 #!/bin/bash
 
+#SBATCH -J pr_TROP
+#SBATCH -o %x_%j.out
 #SBATCH -c 1
 #SBATCH -N 1
 #SBATCH -p huce_intel
 #SBATCH --mem 1000
 #SBATCH -t 0-06:00
+#SBATCH --mail-type=END
 
 ## -------------------------------------------------------------------------##
 ## Load the environment
