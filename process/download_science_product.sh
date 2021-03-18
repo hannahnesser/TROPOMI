@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -J download_TROP
+#SBATCH -J dl_TROP
 #SBATCH -o %x_%j.out
 #SBATCH -c 1
 #SBATCH -N 1
