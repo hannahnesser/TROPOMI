@@ -14,9 +14,6 @@ first_orbit=2832
 cp process_science_product.sh $base
 cd $base
 
-# activate environment
-source activate troppy
-
 # Get list of files
 files=($(python ${python_dir}/list_science_product_all.py $raw $first_orbit))
 num=${#files[@]}
