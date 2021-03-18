@@ -91,11 +91,11 @@ if __name__ == "__main__":
     proc_data_dir = sys.argv[2]
     today = sys.argv[3]
     files = sys.argv[4:]
-    print('ORBIT     NOBS_TOT       NOBS_SUCCESS   ')
+    print('ORBIT, NOBS_TOT, NOBS_SUCCESS   ')
     for f in files:
         o, t, s = process_science_product(f,
                                           raw_data_dir=raw_data_dir,
                                           processed_data_dir=proc_data_dir,
                                           today=today)
-        print(f'{o: <10}{t: <15}{s: <15}')
+        print(f'{o}, {t}, {s}')
 
