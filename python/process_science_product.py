@@ -83,7 +83,7 @@ def process_science_product(file_name,
         data = xr.merge(data.values())
         data.to_netcdf(join(processed_data_dir, save_name))
 
-    return orbit_number, total_nobs, successful_nobs
+    return orbit_number, total_nobs, success_nobs
 
 if __name__ == "__main__":
     import sys
