@@ -1,6 +1,7 @@
 import xarray as xr
 import pandas as pd
 from datetime import date
+import re
 from os import listdir
 from os.path import join
 
@@ -9,6 +10,9 @@ def process_science_product(file_name,
                             raw_data_dir='/n/holyscratch01/jacob_lab/hnesser/TROPOMI/downloads_new/raw',
                             processed_data_dir='/n/holyscratch01/jacob_lab/hnesser/TROPOMI/downloads_new/processed',
                             today=date.today().strftime('%Y%m%dT%H%M%S')):
+    # Create a list of existing orbits
+    preprocessed = [re.split('_+', f)[6] for f in listdir(processed_data_dir)]
+
     # Iterate through those files.
     # print('Processing %s' % file_name)
     file = join(raw_data_dir, file_name)
@@ -25,9 +29,9 @@ def process_science_product(file_name,
 
     # Where the qa value is <= 1 is a good measure of the retrieval success.
     total_nobs = len(mask_qa)
-    success_nobs = mask_qa.sum()
+    success_nobs = mask_qa.sum().values
 
-    if mask_qa.sum() > 0:
+    if (mask_qa.sum() > 0) and (orbit_number not in preprocessed):
         data['qa_value'] = d['qa_value'].where(mask_qa, drop=True)
         d.close()
 
