@@ -27,12 +27,19 @@ def process_science_product(file_name,
     d = xr.open_dataset(file, group='diagnostics')
     mask_qa = (d['qa_value'] <= 1)
 
-    # Where the qa value is <= 1 is a good measure of the retrieval success.
-    total_nobs = len(mask_qa)
-    success_nobs = mask_qa.sum().values
+    # Now get a mask for the masked values
+    d = xr.open_dataset(file, group='target_product')
+    mask_mk = (d['xch4_corrected'] != 9.96921e36)
 
-    if (mask_qa.sum() > 0) and (orbit_number not in preprocessed):
-        data['qa_value'] = d['qa_value'].where(mask_qa, drop=True)
+    # Combine the masks
+    mask = (mask_qa and mask_mk)
+
+    # Where the qa value is <= 1 is a good measure of the retrieval success.
+    total_nobs = len(mask)
+    success_nobs = mask.sum().values
+
+    if (mask.sum() > 0) and (orbit_number not in preprocessed):
+        data['qa_value'] = d['qa_value'].where(mask, drop=True)
         d.close()
 
         # Second, open the instrument group and retrieve information
@@ -41,7 +48,7 @@ def process_science_product(file_name,
         vars = ['time', 'latitude_center', 'longitude_center',
                 'latitude_corners', 'longitude_corners', 'glintflag']
         for var in vars:
-            data[var] = d[var].where(mask_qa, drop=True)
+            data[var] = d[var].where(mask, drop=True)
             d.close()
 
         # Third, open the meteo group and retrieve information on the
@@ -50,7 +57,7 @@ def process_science_product(file_name,
         vars = ['altitude_levels', 'surface_altitude', 'dp',
                 'surface_pressure', 'dry_air_subcolumns', 'cloud_fraction']
         for var in vars:
-            data[var] = d[var].where(mask_qa, drop=True)
+            data[var] = d[var].where(mask, drop=True)
             d.close()
 
         # Fourth, open the target product group and retrieve all variables.
@@ -58,14 +65,14 @@ def process_science_product(file_name,
         # ch4_profile_apriori, xch4_apriori, and xch4_corrected.
         d = xr.open_dataset(file, group='target_product')
         for var in d.keys():
-            data[var] = d[var].where(mask_qa, drop=True)
+            data[var] = d[var].where(mask, drop=True)
             d.close()
 
         # Fifth, open the side product group and retrieve albedo and AOD
         d = xr.open_dataset(file, group='side_product')
         vars = ['surface_albedo', 'aerosol_optical_thickness']
         for var in vars:
-            data[var] = d[var].where(mask_qa, drop=True)
+            data[var] = d[var].where(mask, drop=True)
             d.close()
 
         # Now that we've gotten all the data, we need to get information
