@@ -32,13 +32,14 @@ def process_science_product(file_name,
     mask_mk = (d['xch4_corrected'] != 9.96921e36)
 
     # Combine the masks
-    mask = (mask_qa and mask_mk)
+    mask = (mask_qa & mask_mk)
 
     # Where the qa value is <= 1 is a good measure of the retrieval success.
     total_nobs = len(mask)
     success_nobs = mask.sum().values
 
     if (mask.sum() > 0) and (orbit_number not in preprocessed):
+        d = xr.open_dataset(file, group='diagnostics')
         data['qa_value'] = d['qa_value'].where(mask, drop=True)
         d.close()
 
