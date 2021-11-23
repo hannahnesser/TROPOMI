@@ -201,7 +201,6 @@ if __name__ == '__main__':
             fig, ax = fp.get_figax(maps=True, lats=latlim, lons=lonlim,
                                    max_width=config.BASE_WIDTH,
                                    max_height=config.BASE_HEIGHT)
-            ax = fp.format_map(ax, latlim, lonlim, draw_labels=False)
             rivers = cf.NaturalEarthFeature('physical', 
                                             'rivers_lake_centerlines', 
                                             '10m')
@@ -228,6 +227,7 @@ if __name__ == '__main__':
             ax.scatter(lon, lat, marker='x', s=50, color='black',
                        zorder=10)
 
+            ax = fp.format_map(ax, latlim, lonlim, draw_labels=False)
             cax = fp.add_cax(fig, ax)
             cbar = fig.colorbar(c, cax=cax)
             cbar = fp.format_cbar(cbar, 'XCH4 (ppb)')
