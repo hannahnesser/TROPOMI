@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#SBATCH -n 3
+#SBATCH -n 1
 #SBATCH -N 1
 #SBATCH -p huce_intel
-#SBATCH --mem 10000
-#SBATCH -t 0-10:00
+#SBATCH --mem 4000
+#SBATCH -t 0-01:00
 #SBATCH --mail-type=END
 #SBATCH -J dams
 #SBATCH -o slurm.%x.%j.out # STDOUT
@@ -46,11 +46,11 @@ PYDIR=${HOME}/TROPOMI/python
 INDIR="/n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/base/"
 OUTDIR="/n/seasasfs02/hnesser/TROPOMI/oversampling_output_csvs_14_14/dams/"
 
-python ${PYDIR}/subset_oversampling.py $INDIR $OUTDIR "${ALL[@]}"
+# python ${PYDIR}/subset_oversampling.py $INDIR $OUTDIR "${ALL[@]}"
 
 for region in "${ALL[@]}"
 do
 echo $region
-python ${PYDIR}/group_oversampling.py $OUTDIR "${region%%,*}"
+# python ${PYDIR}/group_oversampling.py $OUTDIR "${region%%,*}"
 python ${PYDIR}/plot_oversampling_dams.py $OUTDIR $region
 done

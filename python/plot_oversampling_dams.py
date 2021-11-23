@@ -108,7 +108,11 @@ if __name__ == '__main__':
                    'wattsbar' : 'Watts Bar',
                    'eastmain' : 'Eastmain 1',
                    'douglas' : 'Douglas',
-                   'kariba' : 'Kariba'}
+                   'kariba' : 'Kariba',
+                   'harsha' : 'Harsha',
+                   'guntersville' : 'Guntersville',
+                   'allatoona' : 'Allatoona',
+                   'fontana' : 'Fontana'}
 
     #latlim = np.array(sys.argv[2].split(',')[1:3]).astype(float)
     #lonlim = np.array(sys.argv[2].split(',')[3:5]).astype(float)
