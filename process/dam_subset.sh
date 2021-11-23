@@ -10,7 +10,9 @@
 #SBATCH -o slurm.%x.%j.out # STDOUT
 #SBATCH -e slurm.%x.%j.err # STDERR
 
-source activate invpy
+module load Anaconda3/5.0.1-fasrc01
+source activate ~/python/miniconda/envs/invpy
+echo "Activated python environment: ${CONDA_PREFIX}"
 
 # regions and lat/lon limits
 # "region_name,latmin,latmax,lonmin,lonmax,lat,lon"
