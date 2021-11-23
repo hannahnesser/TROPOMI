@@ -47,18 +47,22 @@ def plot_TROPOMI(data, latlim, lonlim, res, figax=None, title='', genkml=False, 
     if 'cmap' not in plot_options:
         plot_options['cmap'] = 'inferno'
 
-    # Define edges
-    lat_steps = (latlim[1]-latlim[0])/res + 1
-    lon_steps = (lonlim[1]-lonlim[0])/res + 1
-    if (lat_steps != int(lat_steps)) or (lon_steps != int(lon_steps)):
-        sys.exit('Bad interval.')
+    res_prec = len(str(res).split('.')[1])
 
-    lats = np.around(np.linspace(latlim[0], latlim[1], int(lat_steps)) + res/2,
-                     len(str(res/2).split('.')[1]))
+    # Define edges
+    latlim = [round(l, res_prec) for l in latlim]
+    lat_steps = int((latlim[1]-latlim[0])/res) + 1
+
+    lonlim = [round(l, res_prec) for l in lonlim]
+    lon_steps = int((lonlim[1]-lonlim[0])/res) + 1
+
+    lats = np.around(np.linspace(latlim[0], latlim[1], lat_steps) + res/2,
+                     res_prec + 1)
     lats_s = pd.DataFrame({'idx' : np.ones(len(lats)-1), 'lat' : lats[:-1]})
-    lons = np.around(np.linspace(lonlim[0], lonlim[1], int(lon_steps)) + res/2,
-                     len(str(res/2).split('.')[1]))
+    lons = np.around(np.linspace(lonlim[0], lonlim[1], lon_steps) + res/2,
+                     res_prec + 1)
     lons_s = pd.DataFrame({'idx' : np.ones(len(lons)-1), 'lon' : lons[:-1]})
+
     df = pd.merge(lats_s, lons_s, on='idx').drop(columns='idx')
     data = pd.merge(df, data, on=['lat', 'lon'], how='left')
 
@@ -69,25 +73,63 @@ def plot_TROPOMI(data, latlim, lonlim, res, figax=None, title='', genkml=False, 
         fig, ax = plt.subplots(figsize=(10,10), subplot_kw={'projection' : ccrs.PlateCarree()})
     else:
         fig, ax = figax
-    
+
     c = ax.pcolormesh(lons, lats, d_p,
-                      snap=True,
                       vmin=plot_options['vmin'], vmax=plot_options['vmax'],
-                      cmap=plot_options['cmap'],
-                      edgecolors=None)
-
-    # Get kwargs
-    gridline_kwargs = {}
-    gridline_kwargs['draw_labels'] = gridline_kwargs.get('draw_labels', True)
-    gridline_kwargs['color'] = gridline_kwargs.get('color', 'grey')
-    gridline_kwargs['linestyle'] = gridline_kwargs.get('linestyle', ':')
-
-    # Format
-    gl = ax.gridlines(**gridline_kwargs)
-    gl.xlabel_style = {'fontsize' : config.TICK_FONTSIZE*config.SCALE}
-    gl.ylabel_style = {'fontsize' : config.TICK_FONTSIZE*config.SCALE}
+                      cmap=plot_options['cmap'], edgecolors=None, snap=True)
 
     return fig, ax, c
+
+# def plot_TROPOMI(data, latlim, lonlim, res, figax=None, title='', genkml=False, vals='xch4', **plot_options):
+#     # Set default plot options]
+#     if 'vmin' not in plot_options:
+#         plot_options['vmin'] = 1700
+#     if 'vmax' not in plot_options:
+#         plot_options['vmax'] = 1900
+#     if 'cmap' not in plot_options:
+#         plot_options['cmap'] = 'inferno'
+
+#     # Define edges
+#     lat_steps = (latlim[1]-latlim[0])/res + 1
+#     lon_steps = (lonlim[1]-lonlim[0])/res + 1
+#     if (lat_steps != int(lat_steps)) or (lon_steps != int(lon_steps)):
+#         sys.exit('Bad interval.')
+
+#     lats = np.around(np.linspace(latlim[0], latlim[1], int(lat_steps)) + res/2,
+#                      len(str(res/2).split('.')[1]))
+#     lats_s = pd.DataFrame({'idx' : np.ones(len(lats)-1), 'lat' : lats[:-1]})
+#     lons = np.around(np.linspace(lonlim[0], lonlim[1], int(lon_steps)) + res/2,
+#                      len(str(res/2).split('.')[1]))
+#     lons_s = pd.DataFrame({'idx' : np.ones(len(lons)-1), 'lon' : lons[:-1]})
+#     df = pd.merge(lats_s, lons_s, on='idx').drop(columns='idx')
+#     data = pd.merge(df, data, on=['lat', 'lon'], how='left')
+
+#     d_p = data.pivot(index='lat', columns='lon', values=vals)
+#     lon, lat = np.meshgrid(lons-res/2, lats-res/2)
+
+#     if figax is None:
+#         fig, ax = plt.subplots(figsize=(10,10), subplot_kw={'projection' : ccrs.PlateCarree()})
+#     else:
+#         fig, ax = figax
+    
+#     c = ax.pcolormesh(lons, lats, d_p,
+#                       snap=True,
+#                       vmin=plot_options['vmin'], vmax=plot_options['vmax'],
+#                       cmap=plot_options['cmap'],
+#                       edgecolors=None)
+
+#     # Get kwargs
+#     gridline_kwargs = {}
+#     gridline_kwargs['draw_labels'] = gridline_kwargs.get('draw_labels', True)
+#     gridline_kwargs['color'] = gridline_kwargs.get('color', 'grey')
+#     gridline_kwargs['linestyle'] = gridline_kwargs.get('linestyle', ':')
+
+#     # Format
+#     gl = ax.gridlines(**gridline_kwargs)
+#     gl.xlabel_style = {'fontsize' : config.TICK_FONTSIZE*config.SCALE}
+#     gl.ylabel_style = {'fontsize' : config.TICK_FONTSIZE*config.SCALE}
+
+#     return fig, ax, c
 
 if __name__ == '__main__':
     DATA_DIR = sys.argv[1]
