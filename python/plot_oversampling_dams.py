@@ -79,6 +79,17 @@ def plot_TROPOMI(data, latlim, lonlim, res, figax=None, title='', genkml=False, 
                       vmin=plot_options['vmin'], vmax=plot_options['vmax'],
                       cmap=plot_options['cmap'], edgecolors=None, snap=True)
 
+    # Get kwargs
+    gridline_kwargs = {}
+    gridline_kwargs['draw_labels'] = gridline_kwargs.get('draw_labels', True)
+    gridline_kwargs['color'] = gridline_kwargs.get('color', 'grey')
+    gridline_kwargs['linestyle'] = gridline_kwargs.get('linestyle', ':')
+
+    # Format
+    gl = ax.gridlines(**gridline_kwargs)
+    gl.xlabel_style = {'fontsize' : config.TICK_FONTSIZE*config.SCALE}
+    gl.ylabel_style = {'fontsize' : config.TICK_FONTSIZE*config.SCALE}
+
     return fig, ax, c
 
 # def plot_TROPOMI(data, latlim, lonlim, res, figax=None, title='', genkml=False, vals='xch4', **plot_options):
@@ -205,7 +216,7 @@ if __name__ == '__main__':
             fig, ax = fp.get_figax(maps=True, lats=latlim, lons=lonlim,
                                    max_width=config.BASE_WIDTH,
                                    max_height=config.BASE_HEIGHT)
-            ax = fp.format_map(ax, latlim, lonlim, draw_labels=True)
+            ax = fp.format_map(ax, latlim, lonlim)
             cax = fp.add_cax(fig, ax)
             fp.add_title(ax, title=title, y=1.1)
 
