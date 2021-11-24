@@ -4,7 +4,7 @@
 #SBATCH -N 1
 #SBATCH -p huce_intel
 #SBATCH --mem 4000
-#SBATCH -t 0-01:00
+#SBATCH -t 0-00:20
 #SBATCH --mail-type=END
 #SBATCH -J dams
 #SBATCH -o slurm.%x.%j.out # STDOUT
