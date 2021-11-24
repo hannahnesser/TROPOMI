@@ -70,7 +70,8 @@ def plot_TROPOMI(data, latlim, lonlim, res, figax=None, title='', genkml=False, 
     lon, lat = np.meshgrid(lons-res/2, lats-res/2)
 
     if figax is None:
-        fig, ax = plt.subplots(figsize=(10,10), subplot_kw={'projection' : ccrs.PlateCarree()})
+        fig, ax = plt.subplots(figsize=(10,10),
+                               subplot_kw={'projection' : ccrs.PlateCarree()})
     else:
         fig, ax = figax
 
@@ -199,12 +200,16 @@ if __name__ == '__main__':
                 title = '%s %s %s' % (region_dict[REGION], month_name, year)
             else:
                 title = '%s %s %s' % (region_dict[REGION], full_date[-3:], year)
-                
+
+            # Set up figure
             fig, ax = fp.get_figax(maps=True, lats=latlim, lons=lonlim,
                                    max_width=config.BASE_WIDTH,
                                    max_height=config.BASE_HEIGHT)
+            ax = fp.format_map(ax, latlim, lonlim, draw_labels=True)
+            cax = fp.add_cax(fig, ax)
             fp.add_title(ax, title=title, y=1.1)
-            ax = fp.format_map(ax, latlim, lonlim, draw_labels=False)
+
+            # Add features
             rivers = cf.NaturalEarthFeature('physical', 
                                             'rivers_lake_centerlines', 
                                             '10m')
@@ -220,8 +225,8 @@ if __name__ == '__main__':
             vmax = math.ceil(data['xch4'].max()/50)*50
             #vmin = -np.max(np.abs([vmin, vmax]))
             #vmax = np.max(np.abs([vmin, vmax]))
-            plot_options = {'vmin' : vmin, 
-                            'vmax' : vmax, 
+            plot_options = {'vmin' : 1750,
+                            'vmax' : 1950,
                             'cmap' : 'plasma'}
 
             fig, ax, c = plot_TROPOMI(data, latlim, lonlim, res,
@@ -229,7 +234,8 @@ if __name__ == '__main__':
                                       **plot_options)
             ax.scatter(lon, lat, marker='x', s=50, color='black',
                        zorder=10)
-            cax = fp.add_cax(fig, ax)
+
+            # Plot colorbar
             cbar = fig.colorbar(c, cax=cax)
             cbar = fp.format_cbar(cbar, 'XCH4 (ppb)')
             
